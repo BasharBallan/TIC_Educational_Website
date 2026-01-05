@@ -70,23 +70,7 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
 });
 
 
-exports.changeUserPassword = asyncHandler(async (req, res, next) => {
-  const document = await User.findByIdAndUpdate(
-    req.params.id,
-    {
-      password: await bcrypt.hash(req.body.password, 12),
-      passwordChangedAt: Date.now(),
-    },
-    {
-      new: true,
-    }
-  );
 
-  if (!document) {
-    return next(new ApiError(`No document for this id ${req.params.id}`, 404));
-  }
-  res.status(200).json({ data: document });
-});
 
 // @desc    Delete specific user
 // @route   DELETE /api/v1/users/:id

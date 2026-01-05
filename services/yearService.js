@@ -1,3 +1,5 @@
+const asyncHandler = require('express-async-handler');
+
 const Year = require('../models/yearModel');
 const factory = require('./handlersFactory');
 
@@ -36,7 +38,7 @@ exports.addSemesterToYear = asyncHandler(async (req, res, next) => {
     return next(new ApiError(getMessage('year_not_found', req.lang), 404));
   }
 
-  // تحقق أن السنة ما فيها أكثر من فصلين
+  //Make sure the year does not have more than two terms.
   const semesterCount = await Semester.countDocuments({ year: year._id });
   if (semesterCount >= 2) {
     return next(new ApiError(getMessage('max_semesters_reached', req.lang), 400));

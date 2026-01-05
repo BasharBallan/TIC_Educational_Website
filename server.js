@@ -58,6 +58,7 @@ app.use(
 
 // Custom language middleware
 app.use(langMiddleware);
+app.use("/uploads", express.static("uploads"));
 
 // Mount routes
 mountRoutes(app);

@@ -17,7 +17,11 @@ const lectureSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "doctorId required"],
     },
-    fileUrl: String,
+    file: {
+      url: String,
+      type: String,
+    },
+
     content: String,
     quiz: [
       {

@@ -1,3 +1,6 @@
+const asyncHandler = require('express-async-handler');
+
+
 const Semester = require('../models/semesterModel');
 const factory = require('./handlersFactory');
 

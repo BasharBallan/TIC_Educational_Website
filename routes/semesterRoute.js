@@ -10,50 +10,60 @@ const {
   addSubjectToSemester,
 } = require("../services/semesterService");
 
+// const {
+//   createSemesterValidator,
+//   getSemesterValidator,
+//   updateSemesterValidator,
+//   deleteSemesterValidator,
+//   addSubjectToSemesterValidator,
+// } = require("../utils/validators/semesterValidator");
+
 const router = express.Router();
 
 // ------------------------------------------------------
 // Admin Routes (CRUD)
 // ------------------------------------------------------
 
-// @desc    Get all semesters
-// @route   GET /api/v1/semesters
-// @access  Private/Admin
 router.get("/", protect, allowedTo("admin"), getSemesters);
 
-// @desc    Create new semester
-// @route   POST /api/v1/semesters
-// @access  Private/Admin
-router.post("/", protect, allowedTo("admin"), createSemester);
+router.post(
+  "/",
+  protect,
+  allowedTo("admin"),
+  // createSemesterValidator,
+  createSemester
+);
 
 router
   .route("/:id")
-  // @desc    Get specific semester
-  // @route   GET /api/v1/semesters/:id
-  // @access  Private/Admin
-  .get(protect, allowedTo("admin"), getSemester)
-
-  // @desc    Update semester
-  // @route   PUT /api/v1/semesters/:id
-  // @access  Private/Admin
-  .put(protect, allowedTo("admin"), updateSemester)
-
-  // @desc    Delete semester
-  // @route   DELETE /api/v1/semesters/:id
-  // @access  Private/Admin
-  .delete(protect, allowedTo("admin"), deleteSemester);
+  .get(
+    protect,
+    allowedTo("admin"),
+    // getSemesterValidator,
+    getSemester
+  )
+  .put(
+    protect,
+    allowedTo("admin"),
+    // updateSemesterValidator,
+    updateSemester
+  )
+  .delete(
+    protect,
+    allowedTo("admin"),
+    // deleteSemesterValidator,
+    deleteSemester
+  );
 
 // ------------------------------------------------------
 // Add Subject to Semester
 // ------------------------------------------------------
 
-// @desc    Add subject to a specific semester
-// @route   POST /api/v1/semesters/:semesterId/subjects
-// @access  Private/Admin
 router.post(
   "/:semesterId/subjects",
   protect,
-  allowedTo("admin"),
+  allowedTo("doctor"),
+  // addSubjectToSemesterValidator,
   addSubjectToSemester
 );
 

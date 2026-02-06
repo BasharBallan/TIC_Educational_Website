@@ -10,49 +10,33 @@ const {
   deleteMyLecture,
 } = require("../services/doctorService");
 
+const {
+  createMyLectureValidator,
+  updateMyLectureValidator,
+  getMyLectureValidator,
+  deleteMyLectureValidator,
+} = require("../utils/validators/doctorValidator");
+
 const router = express.Router();
 
-// ------------------------------------------------------
-// Doctor Lecture Management Routes
-// ------------------------------------------------------
-// @note    Doctor must be logged in + must have doctor role
+// Doctor must be logged in + must have doctor role
 router.use(protect, allowedTo("doctor"));
 
-// ------------------------------------------------------
-// @desc    Get all lectures created by this doctor
-// @route   GET /api/v1/doctor/lectures
-// ------------------------------------------------------
+// Get all lectures
 router.get("/", getMyLectures);
 
-// ------------------------------------------------------
-// @desc    Create a new lecture (only for subjects the doctor teaches)
-// @route   POST /api/v1/doctor/lectures
-// ------------------------------------------------------
+// Create lecture
 router.post(
   "/",
-  uploadLectureFile,   
+  uploadLectureFile,
+  createMyLectureValidator,
   createMyLecture
 );
 
-
 router
   .route("/:id")
-  // ------------------------------------------------------
-  // @desc    Get a specific lecture created by this doctor
-  // @route   GET /api/v1/doctor/lectures/:id
-  // ------------------------------------------------------
-  .get(getMyLecture)
-
-  // ------------------------------------------------------
-  // @desc    Update lecture (only if doctor owns it)
-  // @route   PUT /api/v1/doctor/lectures/:id
-  // ------------------------------------------------------
-  .put(updateMyLecture)
-
-  // ------------------------------------------------------
-  // @desc    Delete lecture (only if doctor owns it)
-  // @route   DELETE /api/v1/doctor/lectures/:id
-  // ------------------------------------------------------
-  .delete(deleteMyLecture);
+  .get(getMyLectureValidator, getMyLecture)
+  .put(updateMyLectureValidator, updateMyLecture)
+  .delete(deleteMyLectureValidator, deleteMyLecture);
 
 module.exports = router;

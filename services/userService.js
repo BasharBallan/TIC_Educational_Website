@@ -159,7 +159,6 @@ exports.addDoctor = asyncHandler(async (req, res, next) => {
 
   res.status(201).json({
     status: "success",
-    message: getMessage("doctor_created", req.lang),
     data: doctor,
   });
 });
@@ -172,7 +171,6 @@ exports.getDoctors = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: getMessage("doctor_list", req.lang),
     results: doctors.length,
     data: doctors,
   });
@@ -190,7 +188,6 @@ exports.getDoctor = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: getMessage("doctor_fetched", req.lang),
     data: doctor,
   });
 });
@@ -213,7 +210,6 @@ exports.updateDoctor = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: getMessage("doctor_updated", req.lang),
     data: doctor,
   });
 });
@@ -230,6 +226,5 @@ exports.deleteDoctor = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
-    message: getMessage("doctor_deleted", req.lang),
   });
 });

@@ -6,6 +6,10 @@ const {
   updateUserValidator,
   deleteUserValidator,
   updateLoggedUserValidator,
+  createDoctorValidator,
+  getDoctorValidator,
+  updateDoctorValidator,
+  deleteDoctorValidator,
 } = require("../utils/validators/userValidator");
 
 const {
@@ -20,6 +24,11 @@ const {
   updateLoggedUserPassword,
   updateLoggedUserData,
   deleteLoggedUserData,
+  addDoctor,
+  getDoctors,
+  getDoctor,
+  updateDoctor,
+  deleteDoctor,
 } = require("../services/userService");
 
 const { protect, allowedTo } = require("../services/authService");
@@ -32,46 +41,32 @@ const router = express.Router();
 
 // @desc    Get logged user data
 // @route   GET /api/v1/users/getMe
-// @access  Private (student/doctor/admin)
 router.get("/getMe", protect, getLoggedUserData, getUser);
 
 // @desc    Update logged user password
-// @route   PUT /api/v1/users/changeMyPassword
-// @access  Private (student/doctor/admin)
-router.put("/changeMyPassword", protect, updateLoggedUserPassword);
+// @route   PUT /api/v1/users/updateMyPassword
+router.put("/updateMyPassword", protect, updateLoggedUserPassword);
 
 // @desc    Update logged user data
 // @route   PUT /api/v1/users/updateMe
-// @access  Private (student/doctor)
 router.put(
   "/updateMe",
   protect,
-  allowedTo("student", "doctor"),
   updateLoggedUserValidator,
   updateLoggedUserData
 );
 
-
-
 // @desc    Deactivate logged user
 // @route   DELETE /api/v1/users/deleteMe
-// @access  Private (student/doctor/admin)
 router.delete("/deleteMe", protect, deleteLoggedUserData);
 
 // ------------------------------------------------------
-// Admin Routes
+// Admin Routes (Users CRUD)
 // ------------------------------------------------------
 
 router
   .route("/")
-  // @desc    Get all users
-  // @route   GET /api/v1/users
-  // @access  Private/Admin
   .get(protect, allowedTo("admin"), getUsers)
-
-  // @desc    Create new user
-  // @route   POST /api/v1/users
-  // @access  Private/Admin
   .post(
     protect,
     allowedTo("admin"),
@@ -83,14 +78,7 @@ router
 
 router
   .route("/:id")
-  // @desc    Get user by id
-  // @route   GET /api/v1/users/:id
-  // @access  Private/Admin
   .get(protect, allowedTo("admin"), getUserValidator, getUser)
-
-  // @desc    Update user by id
-  // @route   PUT /api/v1/users/:id
-  // @access  Private/Admin
   .put(
     protect,
     allowedTo("admin"),
@@ -99,10 +87,59 @@ router
     updateUserValidator,
     updateUser
   )
-
-  // @desc    Delete user by id
-  // @route   DELETE /api/v1/users/:id
-  // @access  Private/Admin
   .delete(protect, allowedTo("admin"), deleteUserValidator, deleteUser);
+
+// ------------------------------------------------------
+// Admin Routes (Doctors CRUD)
+// ------------------------------------------------------
+
+// @desc    Add new doctor
+// @route   POST /api/v1/users/admin/doctors
+router.post(
+  "/admin/doctors",
+  protect,
+  allowedTo("admin"),
+  createDoctorValidator,
+  addDoctor
+);
+
+// @desc    Get all doctors
+// @route   GET /api/v1/users/admin/doctors
+router.get(
+  "/admin/doctors",
+  protect,
+  allowedTo("admin"),
+  getDoctors
+);
+
+// @desc    Get doctor by ID
+// @route   GET /api/v1/users/admin/doctors/:id
+router.get(
+  "/admin/doctors/:id",
+  protect,
+  allowedTo("admin"),
+  getDoctorValidator,
+  getDoctor
+);
+
+// @desc    Update doctor
+// @route   PUT /api/v1/users/admin/doctors/:id
+router.put(
+  "/admin/doctors/:id",
+  protect,
+  allowedTo("admin"),
+  updateDoctorValidator,
+  updateDoctor
+);
+
+// @desc    Delete doctor
+// @route   DELETE /api/v1/users/admin/doctors/:id
+router.delete(
+  "/admin/doctors/:id",
+  protect,
+  allowedTo("admin"),
+  deleteDoctorValidator,
+  deleteDoctor
+);
 
 module.exports = router;

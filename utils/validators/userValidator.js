@@ -4,12 +4,15 @@ const { check, body } = require("express-validator");
 const validatorMiddleware = require("../../middlewares/validatorMiddleware");
 const User = require("../../models/userModel");
 
+// ------------------------------------------------------
+// Create User (Admin)
+// ------------------------------------------------------
 exports.createUserValidator = [
   check("name")
     .notEmpty()
-    .withMessage("User required")
+    .withMessage("Name is required")
     .isLength({ min: 3 })
-    .withMessage("Too short User name")
+    .withMessage("Name must be at least 3 characters")
     .custom((val, { req }) => {
       req.body.slug = slugify(val);
       return true;
@@ -17,39 +20,37 @@ exports.createUserValidator = [
 
   check("email")
     .notEmpty()
-    .withMessage("Email required")
+    .withMessage("Email is required")
     .isEmail()
     .withMessage("Invalid email address")
     .custom((val) =>
       User.findOne({ email: val }).then((user) => {
-        if (user) {
-          return Promise.reject(new Error("E-mail already in user"));
-        }
+        if (user) return Promise.reject(new Error("Email already in use"));
       })
     ),
 
   check("password")
     .notEmpty()
-    .withMessage("Password required")
+    .withMessage("Password is required")
     .isStrongPassword()
-    .withMessage("your password msut be strong")
+    .withMessage(
+      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
+    )
     .custom((password, { req }) => {
       if (password !== req.body.passwordConfirm) {
-        throw new Error("Password Confirmation incorrect");
+        throw new Error("Password confirmation does not match");
       }
       return true;
     }),
 
   check("passwordConfirm")
     .notEmpty()
-    .withMessage("Password confirmation required")
-    .isStrongPassword()
-    .withMessage("your password msut be strong"),
+    .withMessage("Password confirmation is required"),
 
   check("phone")
     .optional()
     .isMobilePhone(["ar-EG", "ar-SA"])
-    .withMessage("Invalid phone number only accepted Egy and SA Phone numbers"),
+    .withMessage("Invalid phone number (only EG & SA allowed)"),
 
   check("profileImg").optional(),
   check("role").optional(),
@@ -57,75 +58,101 @@ exports.createUserValidator = [
   validatorMiddleware,
 ];
 
+// ------------------------------------------------------
+// Get User by ID
+// ------------------------------------------------------
 exports.getUserValidator = [
-  check("id").isMongoId().withMessage("Invalid User id format"),
+  check("id").isMongoId().withMessage("Invalid user ID format"),
   validatorMiddleware,
 ];
 
+// ------------------------------------------------------
+// Update User (Admin)
+// ------------------------------------------------------
 exports.updateUserValidator = [
-  check("id").isMongoId().withMessage("Invalid User id format"),
+  check("id").isMongoId().withMessage("Invalid user ID format"),
+
   body("name")
     .optional()
     .custom((val, { req }) => {
       req.body.slug = slugify(val);
       return true;
     }),
+
   check("email")
-.optional()
-,
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email address")
+    .custom((val, { req }) =>
+      User.findOne({ email: val }).then((user) => {
+        if (user && user._id.toString() !== req.params.id) {
+          return Promise.reject(new Error("Email already in use"));
+        }
+      })
+    ),
+
   check("phone")
     .optional()
     .isMobilePhone(["ar-EG", "ar-SA"])
-    .withMessage("Invalid phone number only accepted Egy and SA Phone numbers"),
+    .withMessage("Invalid phone number (only EG & SA allowed)"),
 
   check("profileImg").optional(),
   check("role").optional(),
+
   validatorMiddleware,
 ];
 
+// ------------------------------------------------------
+// Change User Password (Admin)
+// ------------------------------------------------------
 exports.changeUserPasswordValidator = [
-  check("id").isMongoId().withMessage("Invalid User id format"),
+  check("id").isMongoId().withMessage("Invalid user ID format"),
+
   body("currentPassword")
     .notEmpty()
-    .withMessage("You must enter your current password"),
-  body("passwordConfirm")
-    .notEmpty()
-    .withMessage("You must enter the password confirm")
-    .isStrongPassword()
-    .withMessage("your password msut be strong"),
+    .withMessage("Current password is required"),
+
   body("password")
     .notEmpty()
-    .withMessage("You must enter new password")
+    .withMessage("New password is required")
     .isStrongPassword()
-    .withMessage("your password msut be strong")
+    .withMessage(
+      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
+    )
     .custom(async (val, { req }) => {
-      // 1) Verify current password
       const user = await User.findById(req.params.id);
-      if (!user) {
-        throw new Error("There is no user for this id");
-      }
-      const isCorrectPassword = await bcrypt.compare(
+      if (!user) throw new Error("No user found for this ID");
+
+      const isCorrect = await bcrypt.compare(
         req.body.currentPassword,
         user.password
       );
-      if (!isCorrectPassword) {
-        throw new Error("Incorrect current password");
-      }
+      if (!isCorrect) throw new Error("Incorrect current password");
 
-      // 2) Verify password confirm
-      if (val !== req.body.passwordConfirm) {
-        throw new Error("Password Confirmation incorrect");
-      }
+      if (val !== req.body.passwordConfirm)
+        throw new Error("Password confirmation does not match");
+
       return true;
     }),
+
+  body("passwordConfirm")
+    .notEmpty()
+    .withMessage("Password confirmation is required"),
+
   validatorMiddleware,
 ];
 
+// ------------------------------------------------------
+// Delete User (Admin)
+// ------------------------------------------------------
 exports.deleteUserValidator = [
-  check("id").isMongoId().withMessage("Invalid User id format"),
+  check("id").isMongoId().withMessage("Invalid user ID format"),
   validatorMiddleware,
 ];
 
+// ------------------------------------------------------
+// Update Logged User (student/doctor)
+// ------------------------------------------------------
 exports.updateLoggedUserValidator = [
   body("name")
     .optional()
@@ -133,22 +160,110 @@ exports.updateLoggedUserValidator = [
       req.body.slug = slugify(val);
       return true;
     }),
+
+  check("email")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email address")
+    .custom((val, { req }) =>
+      User.findOne({ email: val }).then((user) => {
+        if (user && user._id.toString() !== req.user._id.toString()) {
+          return Promise.reject(new Error("Email already in use"));
+        }
+      })
+    ),
+
+  check("phone")
+    .optional()
+    .isMobilePhone(["ar-EG", "ar-SA"])
+    .withMessage("Invalid phone number (only EG & SA allowed)"),
+
+  validatorMiddleware,
+];
+
+// ------------------------------------------------------
+// Doctor CRUD Validators (Admin)
+// ------------------------------------------------------
+
+// Create Doctor
+exports.createDoctorValidator = [
+  check("name")
+    .notEmpty()
+    .withMessage("Doctor name is required")
+    .isLength({ min: 3 })
+    .withMessage("Doctor name must be at least 3 characters")
+    .custom((val, { req }) => {
+      req.body.slug = slugify(val);
+      return true;
+    }),
+
   check("email")
     .notEmpty()
-    .withMessage("Email required")
+    .withMessage("Doctor email is required")
     .isEmail()
     .withMessage("Invalid email address")
     .custom((val) =>
       User.findOne({ email: val }).then((user) => {
-        if (user) {
-          return Promise.reject(new Error("E-mail already in user"));
+        if (user) return Promise.reject(new Error("Email already in use"));
+      })
+    ),
+
+  check("password")
+    .notEmpty()
+    .withMessage("Password is required")
+    .isStrongPassword()
+    .withMessage(
+      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
+    ),
+
+  check("specialization")
+    .notEmpty()
+    .withMessage("Specialization is required"),
+
+  check("academicTitle")
+    .notEmpty()
+    .withMessage("Academic title is required"),
+
+  validatorMiddleware,
+];
+
+// Get Doctor by ID
+exports.getDoctorValidator = [
+  check("id").isMongoId().withMessage("Invalid doctor ID format"),
+  validatorMiddleware,
+];
+
+// Update Doctor
+exports.updateDoctorValidator = [
+  check("id").isMongoId().withMessage("Invalid doctor ID format"),
+
+  body("name")
+    .optional()
+    .custom((val, { req }) => {
+      req.body.slug = slugify(val);
+      return true;
+    }),
+
+  check("email")
+    .optional()
+    .isEmail()
+    .withMessage("Invalid email address")
+    .custom((val, { req }) =>
+      User.findOne({ email: val }).then((user) => {
+        if (user && user._id.toString() !== req.params.id) {
+          return Promise.reject(new Error("Email already in use"));
         }
       })
     ),
-  check("phone")
-    .optional()
-    .isMobilePhone(["ar-EG", "ar-SA"])
-    .withMessage("Invalid phone number only accepted Egy and SA Phone numbers"),
 
+  check("specialization").optional(),
+  check("academicTitle").optional(),
+
+  validatorMiddleware,
+];
+
+// Delete Doctor
+exports.deleteDoctorValidator = [
+  check("id").isMongoId().withMessage("Invalid doctor ID format"),
   validatorMiddleware,
 ];

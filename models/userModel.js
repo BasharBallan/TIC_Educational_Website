@@ -48,13 +48,11 @@ const userSchema = new mongoose.Schema(
       year: {
         type: mongoose.Schema.ObjectId,
         ref: "Year",
-        required: [true, "year required"],
       },
 
       semester: {
         type: mongoose.Schema.ObjectId,
         ref: "Semester",
-        required: [true, "semester required"],
       },
 
       subjects: [
@@ -75,11 +73,9 @@ const userSchema = new mongoose.Schema(
     doctorData: {
       specialization: {
         type: String,
-        required: [true, "specialization required"],
       },
       academicTitle: {
         type: String,
-        required: [true, "academicTitle required"],
       },
       subjects: [
         {

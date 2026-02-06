@@ -1,44 +1,48 @@
-const fs = require('fs');
-require('colors');
-const dotenv = require('dotenv');
-const Car = require('../../models/carModel');
-const dbConnection = require('../../config/database');
+const fs = require("fs");
+const path = require("path");
+require("colors");
+const dotenv = require("dotenv");
+const Subject = require("../../models/subjectModel");
+const dbConnection = require("../../config/database");
 
-dotenv.config({ path: '../../config.env' });
+dotenv.config({ path: path.join(__dirname, "../../config.env") });
 
-// connect to DB
+// Connect DB
 dbConnection();
 
-// Read data
-const cars = JSON.parse(fs.readFileSync('./car.json'));
+// Read JSON file
+const doctors = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "subjects.json"))
+);
 
-
-// Insert data into DB
+// Insert
 const insertData = async () => {
   try {
-    await Car.create(cars);
-
-    console.log('Data Inserted'.green.inverse);
+    await Subject.create(doctors);
+    console.log("subjects Inserted".green.inverse);
     process.exit();
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
   }
 };
 
-// Delete data from DB
+// Delete
 const destroyData = async () => {
   try {
-    await Car.deleteMany();
-    console.log('Data Destroyed'.red.inverse);
+    await Subject.deleteMany({});
+    console.log("subjects Deleted".red.inverse);
     process.exit();
-  } catch (error) {
-    console.log(error);
+  } catch (err) {
+    console.log(err);
+    process.exit(1);
   }
 };
 
-// node seeder.js -d
-if (process.argv[2] === '-i') {
-  insertData();
-} else if (process.argv[2] === '-d') {
-  destroyData();
+// Run
+if (process.argv[2] === "-i") insertData();
+else if (process.argv[2] === "-d") destroyData();
+else {
+  console.log("Use -i to insert or -d to delete".yellow);
+  process.exit();
 }

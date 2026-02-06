@@ -42,7 +42,7 @@ router.post("/adminSignup", AdminSignup);
 // @desc    Forgot Password
 // @route   POST /api/v1/auth/forgotPassword
 // @access  Public
-router.post("/forgotPassword", forgotPassword);
+router.patch("/forgotPassword", forgotPassword);
 
 // @desc    Verify Reset Code
 // @route   POST /api/v1/auth/verifyResetCode

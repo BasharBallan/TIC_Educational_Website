@@ -9,37 +9,48 @@ const {
   deleteLecture,
 } = require("../services/lectureService");
 
+const {
+  createLectureValidator,
+  getLectureValidator,
+  updateLectureValidator,
+  deleteLectureValidator,
+} = require("../utils/validators/lectureValidator");
+
 const router = express.Router();
 
 // ------------------------------------------------------
 // Admin Routes (CRUD)
 // ------------------------------------------------------
 
-// @desc    Get all lectures
-// @route   GET /api/v1/lectures
-// @access  Private/Admin
 router.get("/", protect, allowedTo("admin"), getLectures);
 
-// @desc    Create new lecture
-// @route   POST /api/v1/lectures
-// @access  Private/Admin
-router.post("/", protect, allowedTo("admin"), createLecture);
+router.post(
+  "/",
+  protect,
+  allowedTo("admin"),
+  createLectureValidator,
+  createLecture
+);
 
 router
   .route("/:id")
-  // @desc    Get specific lecture
-  // @route   GET /api/v1/lectures/:id
-  // @access  Private/Admin
-  .get(protect, allowedTo("admin"), getLecture)
-
-  // @desc    Update lecture
-  // @route   PUT /api/v1/lectures/:id
-  // @access  Private/Admin
-  .put(protect, allowedTo("admin"), updateLecture)
-
-  // @desc    Delete lecture
-  // @route   DELETE /api/v1/lectures/:id
-  // @access  Private/Admin
-  .delete(protect, allowedTo("admin"), deleteLecture);
+  .get(
+    protect,
+    allowedTo("admin"),
+    getLectureValidator,
+    getLecture
+  )
+  .put(
+    protect,
+    allowedTo("admin"),
+    updateLectureValidator,
+    updateLecture
+  )
+  .delete(
+    protect,
+    allowedTo("admin"),
+    deleteLectureValidator,
+    deleteLecture
+  );
 
 module.exports = router;

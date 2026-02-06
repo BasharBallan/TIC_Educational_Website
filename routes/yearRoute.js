@@ -10,50 +10,45 @@ const {
   addSemesterToYear,
 } = require("../services/yearService");
 
+const {
+  createYearValidator,
+  getYearValidator,
+  updateYearValidator,
+  deleteYearValidator,
+  addSemesterToYearValidator,
+} = require("../utils/validators/yearValidator");
+
 const router = express.Router();
 
 // ------------------------------------------------------
 // Admin Routes (CRUD)
 // ------------------------------------------------------
 
-// @desc    Get all years
-// @route   GET /api/v1/years
-// @access  Private/Admin
 router.get("/", protect, allowedTo("admin"), getYears);
 
-// @desc    Create new year
-// @route   POST /api/v1/years
-// @access  Private/Admin
-router.post("/", protect, allowedTo("admin"), createYear);
+router.post(
+  "/",
+  protect,
+  allowedTo("admin"),
+  createYearValidator,
+  createYear
+);
 
 router
   .route("/:id")
-  // @desc    Get specific year
-  // @route   GET /api/v1/years/:id
-  // @access  Private/Admin
-  .get(protect, allowedTo("admin"), getYear)
-
-  // @desc    Update year
-  // @route   PUT /api/v1/years/:id
-  // @access  Private/Admin
-  .put(protect, allowedTo("admin"), updateYear)
-
-  // @desc    Delete year
-  // @route   DELETE /api/v1/years/:id
-  // @access  Private/Admin
-  .delete(protect, allowedTo("admin"), deleteYear);
+  .get(protect, allowedTo("admin"), getYearValidator, getYear)
+  .put(protect, allowedTo("admin"), updateYearValidator, updateYear)
+  .delete(protect, allowedTo("admin"), deleteYearValidator, deleteYear);
 
 // ------------------------------------------------------
 // Add Semester to Year
 // ------------------------------------------------------
 
-// @desc    Add semester to a specific year
-// @route   POST /api/v1/years/:yearId/semesters
-// @access  Private/Admin
 router.post(
   "/:yearId/semesters",
   protect,
   allowedTo("admin"),
+  addSemesterToYearValidator,
   addSemesterToYear
 );
 

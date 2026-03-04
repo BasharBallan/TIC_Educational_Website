@@ -1,5 +1,6 @@
 const asyncHandler = require("express-async-handler");
 const Lecture = require("../models/lectureModel");
+const User = require("../models/userModel");
 const Subject = require("../models/subjectModel");
 const ApiError = require("../utils/apiError");
 const { uploadLectureFile } = require("../middlewares/uploadAnyFileMiddlware");
@@ -37,7 +38,7 @@ exports.getMyLectures = asyncHandler(async (req, res, next) => {
 exports.getMyLecture = asyncHandler(async (req, res, next) => {
   const lecture = await Lecture.findOne({
     _id: req.params.id,
-    doctor: req.user._id,
+    doctorId: req.user._id,
   });
 
   if (!lecture) {
@@ -56,20 +57,20 @@ exports.getMyLecture = asyncHandler(async (req, res, next) => {
 // @access  Private/Doctor
 // ------------------------------------------------------
 exports.createMyLecture = asyncHandler(async (req, res, next) => {
-  const { title, description, subject } = req.body;
+  const { title, description, subjectId } = req.body;
 
-  // Check subject exists
-  const subjectDoc = await Subject.findById(subject);
+  // 1) Check subject exists
+  const subjectDoc = await Subject.findById(subjectId);
   if (!subjectDoc) {
     return next(new ApiError("Subject not found", 404));
   }
 
-  // Check doctor teaches this subject
-  if (!doctorTeachesSubject(req.user, subject)) {
+  // 2) Check doctor teaches this subject
+  if (!doctorTeachesSubject(req.user, subjectId)) {
     return next(new ApiError("You are not assigned to this subject", 403));
   }
 
-  // Handle file upload
+  // 3) Handle file upload
   let fileData = null;
   if (req.file) {
     fileData = {
@@ -78,14 +79,26 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
     };
   }
 
+  // 4) Create lecture
   const lecture = await Lecture.create({
     title,
     description,
-    subject,
-    doctor: req.user._id,
+    subjectId,
+    doctorId: req.user._id,
     file: fileData,
   });
 
+  // 5) Add lecture to subject
+  await Subject.findByIdAndUpdate(subjectId, {
+    $push: { lectures: lecture._id }
+  });
+
+  // 6) Add lecture to doctor (inside user.doctorData.lectures)
+  await User.findByIdAndUpdate(req.user._id, {
+    $push: { "doctorData.lectures": lecture._id }
+  });
+
+  // 7) Response
   res.status(201).json({
     status: "success",
     data: lecture,
@@ -100,7 +113,7 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
 exports.updateMyLecture = asyncHandler(async (req, res, next) => {
   const lecture = await Lecture.findOne({
     _id: req.params.id,
-    doctor: req.user._id,
+    doctorId: req.user._id,
   });
 
   if (!lecture) {
@@ -132,7 +145,7 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
 exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
   const lecture = await Lecture.findOneAndDelete({
     _id: req.params.id,
-    doctor: req.user._id,
+    doctorId: req.user._id,
   });
 
   if (!lecture) {

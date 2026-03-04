@@ -25,6 +25,12 @@ const subjectSchema = new mongoose.Schema(
       ref: "User",
       required: [true, "doctorId required"],
     },
+      lectures: [
+            {
+              type: mongoose.Schema.ObjectId,
+              ref: "Lecture",
+            },  
+          ],
     description: String,
   },
   { timestamps: true }

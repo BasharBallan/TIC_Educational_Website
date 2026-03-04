@@ -2,7 +2,7 @@ const fs = require("fs");
 const path = require("path");
 require("colors");
 const dotenv = require("dotenv");
-const Subject = require("../../models/subjectModel");
+const Lecture = require("../../models/lectureModel");
 const dbConnection = require("../../config/database");
 
 dotenv.config({ path: path.join(__dirname, "../../config.env") });
@@ -11,15 +11,15 @@ dotenv.config({ path: path.join(__dirname, "../../config.env") });
 dbConnection();
 
 // Read JSON file
-const doctors = JSON.parse(
-  fs.readFileSync(path.join(__dirname, "subjects.json"))
+const lectures = JSON.parse(
+  fs.readFileSync(path.join(__dirname, "lectures.json"))
 );
 
 // Insert
 const insertData = async () => {
   try {
-    await Subject.create(doctors);
-    console.log("subjects Inserted".green.inverse);
+    await Lecture.create(lectures);
+    console.log("lectures Inserted".green.inverse);
     process.exit();
   } catch (err) {
     console.log(err);
@@ -30,8 +30,8 @@ const insertData = async () => {
 // Delete
 const destroyData = async () => {
   try {
-    await Subject.deleteMany({});
-    console.log("subjects Deleted".red.inverse);
+    await Lecture.deleteMany({});
+    console.log("lectures Deleted".red.inverse);
     process.exit();
   } catch (err) {
     console.log(err);

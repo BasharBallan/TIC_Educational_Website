@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start:dev": "nodemon server.js",
+    "start:dev": "node --watch server.js",
     "start": "NODE_ENV=production node server.js"
   },
   "keywords": [],
@@ -30,6 +30,8 @@
     "sharp": "^0.33.3",
     "slugify": "^1.6.6",
     "stripe": "^15.2.0",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.1",
     "uuid": "^9.0.1"
   },
   "devDependencies": {

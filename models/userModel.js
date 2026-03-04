@@ -83,6 +83,12 @@ const userSchema = new mongoose.Schema(
           ref: "Subject",
         },
       ],
+        lectures: [
+        {
+          type: mongoose.Schema.ObjectId,
+          ref: "Lecture",
+        },
+      ],
     },
   },
   { timestamps: true }

@@ -197,20 +197,52 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ApiError(getMessage("no_user_with_email", req.lang), 404));
   }
 
+  // Generate reset code
   const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
-  const hashedResetCode = crypto.createHash("sha256").update(resetCode).digest("hex");
+  const hashedResetCode = crypto
+    .createHash("sha256")
+    .update(resetCode)
+    .digest("hex");
 
   user.passwordResetCode = hashedResetCode;
-  user.passwordResetExpires = Date.now() + 10 * 60 * 1000;
+  user.passwordResetExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
   user.passwordResetVerified = false;
   await user.save();
 
-  const message = `Hi ${user.name},\nYour reset code is: ${resetCode}\nValid for 10 minutes.`;
+  // HTML Email Template
+  const htmlMessage = `
+  <div style="font-family: Arial, sans-serif; padding: 20px; background: #f7f7f7;">
+    <div style="max-width: 500px; margin: auto; background: white; padding: 25px; border-radius: 8px; border: 1px solid #ddd;">
+      <h2 style="color: #2c3e50; text-align: center;">TIC Educational Platform</h2>
+      <p style="font-size: 16px; color: #333;">
+        Hello ${user.name},
+        <br><br>
+        You requested to reset your password. Please use the verification code below to complete the process.
+      </p>
+
+      <div style="text-align: center; margin: 25px 0;">
+        <span style="font-size: 32px; font-weight: bold; color: #1a73e8; letter-spacing: 3px;">
+          ${resetCode}
+        </span>
+      </div>
+
+      <p style="font-size: 15px; color: #555;">
+        This code is valid for <strong>10 minutes</strong>.
+        If you did not request a password reset, please ignore this email.
+      </p>
+
+      <p style="margin-top: 30px; font-size: 14px; color: #777; text-align: center;">
+        © 2026 TIC Educational Platform
+      </p>
+    </div>
+  </div>
+  `;
+
   try {
     await sendEmail({
       email: user.email,
-      subject: "Your password reset code (valid for 10 min)",
-      message,
+      subject: "Your password reset code (valid for 10 minutes)",
+      html: htmlMessage, // 
     });
   } catch (err) {
     user.passwordResetCode = undefined;
@@ -223,6 +255,31 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     status: "success",
     message: getMessage("reset_code_sent", req.lang),
+  });
+});
+
+
+// @desc    Verify reset code
+// @route   POST /api/v1/auth/verifyResetCode
+// @access  Public
+exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
+  const hashedResetCode = crypto.createHash("sha256").update(req.body.resetCode).digest("hex");
+
+  const user = await User.findOne({
+    passwordResetCode: hashedResetCode,
+    passwordResetExpires: { $gt: Date.now() },
+  });
+
+  if (!user) {
+    return next(new ApiError(getMessage("reset_code_invalid", req.lang), 400));
+  }
+
+  user.passwordResetVerified = true;
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: getMessage("reset_code_verified", req.lang),
   });
 });
 

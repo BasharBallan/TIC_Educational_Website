@@ -16,7 +16,7 @@ exports.createMyLectureValidator = [
     .isLength({ min: 5 })
     .withMessage("Description must be at least 5 characters"),
 
-  check("subject")
+  check("subjectId")
     .notEmpty()
     .withMessage("Subject ID is required")
     .isMongoId()

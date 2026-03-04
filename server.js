@@ -30,7 +30,6 @@ app.options('*', cors());
 // Compress all responses
 app.use(compression());
 
-
 // Body parser & static files
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'uploads')));
@@ -43,8 +42,8 @@ if (process.env.NODE_ENV === 'development') {
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 1000, 
+  windowMs: 15 * 60 * 1000, 
+  max: 1000,
   message: 'Too many requests from this IP, please try again later',
 });
 app.use('/api', limiter);
@@ -60,10 +59,21 @@ app.use(
 app.use(langMiddleware);
 app.use("/uploads", express.static("uploads"));
 
-// Mount routes
+
+
+const { swaggerUi, swaggerSpec } = require("./swagger");
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+
+// ------------------------------------------------------
+// Mount all routes
+// ------------------------------------------------------
 mountRoutes(app);
 
+
+// ------------------------------------------------------
 // Handle unknown routes
+// ------------------------------------------------------
 app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
 });
@@ -71,11 +81,15 @@ app.all('*', (req, res, next) => {
 // Global error handler
 app.use(globalError);
 
+
+// ------------------------------------------------------
 // Start server
+// ------------------------------------------------------
 const PORT = process.env.PORT || 8000;
 const server = app.listen(PORT, () => {
   console.log(`App running on port ${PORT}`);
 });
+
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
@@ -86,7 +100,6 @@ process.on('unhandledRejection', (err) => {
   });
 });
 
-// Handle uncaught exceptions (اختياري)
 process.on('uncaughtException', (err) => {
   console.error(`Uncaught Exception: ${err.name} | ${err.message}`);
   server.close(() => {

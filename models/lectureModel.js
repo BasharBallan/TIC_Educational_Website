@@ -7,22 +7,26 @@ const lectureSchema = new mongoose.Schema(
       required: [true, "title required"],
     },
     description: String,
+
     subjectId: {
       type: mongoose.Schema.ObjectId,
       ref: "Subject",
       required: [true, "subjectId required"],
     },
+
     doctorId: {
       type: mongoose.Schema.ObjectId,
       ref: "User",
       required: [true, "doctorId required"],
     },
+
     file: {
-      url: String,
-      type: String,
+      url: { type: String },
+      type: { type: String }
     },
 
     content: String,
+
     quiz: [
       {
         question: {

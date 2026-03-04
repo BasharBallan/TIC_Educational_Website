@@ -4,11 +4,16 @@ const User = require('../models/userModel');
 // @desc    Add lecture to saved list
 // @route   POST /api/v1/saved-lectures
 // @access  Protected/User
+const mongoose = require("mongoose");
+
+
 exports.addLectureToSaved = asyncHandler(async (req, res, next) => {
+  const lectureObjectId = new mongoose.Types.ObjectId(req.body.lectureId);
+
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      $addToSet: { savedLectures: req.body.lectureId },
+      $addToSet: { "studentData.savedLectures": lectureObjectId },
     },
     { new: true }
   );
@@ -16,9 +21,11 @@ exports.addLectureToSaved = asyncHandler(async (req, res, next) => {
   res.status(200).json({
     status: 'success',
     message: 'Lecture added successfully to your saved list.',
-    data: user.savedLectures,
+    data: user.studentData.savedLectures,
   });
 });
+
+
 
 // @desc    Remove lecture from saved list
 // @route   DELETE /api/v1/saved-lectures/:lectureId
@@ -27,15 +34,16 @@ exports.removeLectureFromSaved = asyncHandler(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      $pull: { savedLectures: req.params.lectureId },
+      $pull: { "studentData.savedLectures": req.params.lectureId },
     },
     { new: true }
   );
 
+
   res.status(200).json({
     status: 'success',
     message: 'Lecture removed successfully from your saved list.',
-    data: user.savedLectures,
+    data: user.studentData.savedLectures,
   });
 });
 
@@ -43,12 +51,12 @@ exports.removeLectureFromSaved = asyncHandler(async (req, res, next) => {
 // @route   GET /api/v1/saved-lectures
 // @access  Protected/User
 exports.getLoggedUserSavedLectures = asyncHandler(async (req, res, next) => {
-  const user = await User.findById(req.user._id).populate('savedLectures');
+  const user = await User.findById(req.user._id).populate('studentData.savedLectures');
 
   res.status(200).json({
     status: 'success',
-    results: user.savedLectures.length,
-    data: user.savedLectures,
+    results: user.studentData.savedLectures.length,
+    data: user.studentData.savedLectures,
   });
 });
 

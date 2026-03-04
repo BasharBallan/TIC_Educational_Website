@@ -59,12 +59,12 @@ exports.updateUser = asyncHandler(async (req, res, next) => {
   );
 
   if (!document) {
-    return next(new ApiError(getMessage('not_found', req.lang), 404));
+    return res.status(404);
   }
 
   res.status(200).json({
     status: 'success',
-    message: getMessage('user_updated', req.lang),
+    message: 'the user updated successfully',
     data: document,
   });
 });

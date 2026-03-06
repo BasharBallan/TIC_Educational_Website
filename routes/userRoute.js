@@ -17,8 +17,6 @@ const {
   getUsers,
   getUser,
   deleteUser,
-  uploadUserImage,
-  resizeImage,
   getLoggedUserData,
   updateLoggedUserPassword,
   updateLoggedUserData,

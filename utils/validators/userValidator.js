@@ -4,148 +4,18 @@ const { check, body } = require("express-validator");
 const validatorMiddleware = require("../../middlewares/validatorMiddleware");
 const User = require("../../models/userModel");
 
-// ------------------------------------------------------
-// Create User (Admin)
-// ------------------------------------------------------
-exports.createUserValidator = [
-  check("name")
-    .notEmpty()
-    .withMessage("Name is required")
-    .isLength({ min: 3 })
-    .withMessage("Name must be at least 3 characters")
-    .custom((val, { req }) => {
-      req.body.slug = slugify(val);
-      return true;
-    }),
-
-  check("email")
-    .notEmpty()
-    .withMessage("Email is required")
-    .isEmail()
-    .withMessage("Invalid email address")
-    .custom((val) =>
-      User.findOne({ email: val }).then((user) => {
-        if (user) return Promise.reject(new Error("Email already in use"));
-      })
-    ),
-
-  check("password")
-    .notEmpty()
-    .withMessage("Password is required")
-    .isStrongPassword()
-    .withMessage(
-      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
-    )
-    .custom((password, { req }) => {
-      if (password !== req.body.passwordConfirm) {
-        throw new Error("Password confirmation does not match");
-      }
-      return true;
-    }),
-
-  check("passwordConfirm")
-    .notEmpty()
-    .withMessage("Password confirmation is required"),
-
-  check("phone")
-    .optional()
-    .isMobilePhone(["ar-EG", "ar-SA"])
-    .withMessage("Invalid phone number (only EG & SA allowed)"),
-
-  check("profileImg").optional(),
-  check("role").optional(),
-
-  validatorMiddleware,
-];
-
-// ------------------------------------------------------
-// Get User by ID
-// ------------------------------------------------------
-exports.getUserValidator = [
-  check("id").isMongoId().withMessage("Invalid user ID format"),
-  validatorMiddleware,
-];
-
-// ------------------------------------------------------
-// Update User (Admin)
-// ------------------------------------------------------
-exports.updateUserValidator = [
-  check("id").isMongoId().withMessage("Invalid user ID format"),
-
-  body("name")
-    .optional()
-    .custom((val, { req }) => {
-      req.body.slug = slugify(val);
-      return true;
-    }),
-
-  check("email")
-    .optional()
-    .isEmail()
-    .withMessage("Invalid email address")
-    .custom((val, { req }) =>
-      User.findOne({ email: val }).then((user) => {
-        if (user && user._id.toString() !== req.params.id) {
-          return Promise.reject(new Error("Email already in use"));
-        }
-      })
-    ),
-
-  check("phone")
-    .optional()
-    .isMobilePhone(["ar-EG", "ar-SA"])
-    .withMessage("Invalid phone number (only EG & SA allowed)"),
-
-  check("profileImg").optional(),
-  check("role").optional(),
-
-  validatorMiddleware,
-];
-
-// ------------------------------------------------------
-// Change User Password (Admin)
-// ------------------------------------------------------
-exports.changeUserPasswordValidator = [
-  check("id").isMongoId().withMessage("Invalid user ID format"),
-
-  body("currentPassword")
-    .notEmpty()
-    .withMessage("Current password is required"),
-
-  body("password")
-    .notEmpty()
-    .withMessage("New password is required")
-    .isStrongPassword()
-    .withMessage(
-      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
-    )
-    .custom(async (val, { req }) => {
-      const user = await User.findById(req.params.id);
-      if (!user) throw new Error("No user found for this ID");
-
-      const isCorrect = await bcrypt.compare(
-        req.body.currentPassword,
-        user.password
-      );
-      if (!isCorrect) throw new Error("Incorrect current password");
-
-      if (val !== req.body.passwordConfirm)
-        throw new Error("Password confirmation does not match");
-
-      return true;
-    }),
-
-  body("passwordConfirm")
-    .notEmpty()
-    .withMessage("Password confirmation is required"),
-
-  validatorMiddleware,
-];
 
 // ------------------------------------------------------
 // Delete User (Admin)
 // ------------------------------------------------------
 exports.deleteUserValidator = [
+  check("id").isMongoId().withMessage("Invalid user ID format"),
+  validatorMiddleware,
+];
+// ------------------------------------------------------
+// Get User by ID
+// ------------------------------------------------------
+exports.getUserValidator = [
   check("id").isMongoId().withMessage("Invalid user ID format"),
   validatorMiddleware,
 ];
@@ -180,6 +50,51 @@ exports.updateLoggedUserValidator = [
 
   validatorMiddleware,
 ];
+
+// ------------------------------------------------------
+// Change Logged User Password (Student / Doctor / Admin)
+// ------------------------------------------------------
+exports.updateLoggedUserPasswordValidator = [
+  body("currentPassword")
+    .notEmpty()
+    .withMessage("Current password is required"),
+
+  body("newPassword")
+    .notEmpty()
+    .withMessage("New password is required")
+    .isStrongPassword()
+    .withMessage(
+      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
+    )
+    .custom(async (val, { req }) => {
+      const user = await User.findById(req.user._id);
+      if (!user) throw new Error("User not found");
+
+      // Check current password correctness
+      const isCorrect = await bcrypt.compare(
+        req.body.currentPassword,
+        user.password
+      );
+      if (!isCorrect) throw new Error("Incorrect current password");
+
+      // Prevent using the same password again
+      if (val === req.body.currentPassword)
+        throw new Error("New password must be different from current password");
+
+      // Check password confirmation
+      if (val !== req.body.passwordConfirm)
+        throw new Error("Password confirmation does not match");
+
+      return true;
+    }),
+
+  body("passwordConfirm")
+    .notEmpty()
+    .withMessage("Password confirmation is required"),
+
+  validatorMiddleware,
+];
+
 
 // ------------------------------------------------------
 // Doctor CRUD Validators (Admin)

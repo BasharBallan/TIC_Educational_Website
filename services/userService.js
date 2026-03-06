@@ -40,37 +40,6 @@ exports.getUsers = factory.getAll(User);
 // @access  Private/Admin
 exports.getUser = factory.getOne(User);
 
-// @desc    Create user
-// @route   POST  /api/v1/users
-// @access  Private/Admin
-exports.createUser = factory.createOne(User);
-
-// @desc    Update specific user
-// @route   PUT /api/v1/users/:id
-// @access  Private/Admin
-exports.updateUser = asyncHandler(async (req, res, next) => {
-
-  const { email, password, ...allowedUpdates } = req.body;
-
-  const document = await User.findByIdAndUpdate(
-    req.params.id,
-    allowedUpdates,
-    { new: true }
-  );
-
-  if (!document) {
-    return res.status(404);
-  }
-
-  res.status(200).json({
-    status: 'success',
-    message: 'the user updated successfully',
-    data: document,
-  });
-});
-
-
-
 
 // @desc    Delete specific user
 // @route   DELETE /api/v1/users/:id
@@ -93,7 +62,7 @@ exports.updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
     req.user._id,
     {
-      password: await bcrypt.hash(req.body.password, 12),
+      password: await bcrypt.hash(req.body.newPassword, 12),
       passwordChangedAt: Date.now(),
     },
     {

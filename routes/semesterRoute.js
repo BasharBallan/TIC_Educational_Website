@@ -7,7 +7,6 @@ const {
   createSemester,
   updateSemester,
   deleteSemester,
-  addSubjectToSemester,
 } = require("../services/semesterService");
 
 const router = express.Router();
@@ -166,49 +165,6 @@ router.put("/:id", protect, allowedTo("admin"), updateSemester);
  */
 router.delete("/:id", protect, allowedTo("admin"), deleteSemester);
 
-/**
- * @swagger
- * /api/v1/semesters/{semesterId}/subjects:
- *   post:
- *     summary: Add a subject to a semester
- *     tags: [Semesters]
- *     security:
- *       - bearerAuth: []
- *     description: Allows a doctor to add a subject to a semester.
- *     parameters:
- *       - in: path
- *         name: semesterId
- *         required: true
- *         schema:
- *           type: string
- *         description: Semester ID
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - subjectId
- *             properties:
- *               subjectId:
- *                 type: string
- *                 example: "69857b2353683e8b81ca91b3"
- *     responses:
- *       200:
- *         description: Subject added to semester successfully
- *       404:
- *         description: Semester or subject not found
- *       401:
- *         description: Unauthorized
- *       403:
- *         description: Forbidden
- */
-router.post(
-  "/:semesterId/subjects",
-  protect,
-  allowedTo("admin"),
-  addSubjectToSemester
-);
+
 
 module.exports = router;

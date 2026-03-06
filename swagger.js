@@ -34,19 +34,23 @@ Bearer YOUR_TOKEN_HERE
 Use these tokens to test the API without needing to log in.
 
 ### 👑 Admin Token
-\`\`\`
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTVlYTVkN2M2ZDE0MzFmZjlhNDE0OTMiLCJpYXQiOjE3NzE4NTMzMTUsImV4cCI6Nzk1MzE4NTMzMTV9.VtY6Ofl3WEDCNCoRiqDzV9GIgEbmD6tdQ-dtoHU9TY4
-\`\`\`
+<div style="display:flex;align-items:center;gap:10px;">
+  <code id="adminToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTVlYTVkN2M2ZDE0MzFmZjlhNDE0OTMiLCJpYXQiOjE3NzI3NTM2MzQsImV4cCI6Nzk1MzI3NTM2MzR9.eB7D2Z5DbWFRBjToVZ4dR4f_ltYiu5TTgHtD3oFx3YY</code>
+  <button onclick="navigator.clipboard.writeText(document.getElementById('adminToken').innerText)">Copy</button>
+</div>
 
 ### 🩺 Doctor Token
-\`\`\`
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwM2FiMDc5YTE2ODAxZGIzOGUxNzIiLCJpYXQiOjE3NzIyMzE0NDMsImV4cCI6Nzk1MzIyMzE0NDN9.DFI9Xn_5o8A1a5s5nDApoP-XuOvSP41mXLH8cnHxfDo
-\`\`\`
+<div style="display:flex;align-items:center;gap:10px;">
+  <code id="doctorToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwM2FiMDc5YTE2ODAxZGIzOGUxNzIiLCJpYXQiOjE3NzIyMzE0NDMsImV4cCI6Nzk1MzIyMzE0NDN9.DFI9Xn_5o8A1a5s5nDApoP-XuOvSP41mXLH8cnHxfDo</code>
+  <button onclick="navigator.clipboard.writeText(document.getElementById('doctorToken').innerText)">Copy</button>
+</div>
 
 ### 🎓 Student Token
-\`\`\`
-eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTljNTc2NWYyZTc0ZjgzZGVjNDI3N2YiLCJpYXQiOjE3NzE4NTM2NzAsImV4cCI6Nzk1MzE4NTM2NzB9.jlzIOlWBAeBYViEuygj563iKB8iIJcm4-Wjetj0cVNQ
-\`\`\`
+<div style="display:flex;align-items:center;gap:10px;">
+  <code id="studentToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwM2FiMDc5YTE2ODAxZGIzOGUxNzIiLCJpYXQiOjE3NzIyMzE0NDMsImV4cCI6Nzk1MzIyMzE0NDN9.DFI9Xn_5o8A1a5s5nDApoP-XuOvSP41mXLH8cnHxfDo</code>
+  <button onclick="navigator.clipboard.writeText(document.getElementById('studentToken').innerText)">Copy</button>
+</div>
+
 
 ---
 

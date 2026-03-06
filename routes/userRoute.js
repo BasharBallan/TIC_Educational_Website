@@ -6,6 +6,7 @@ const {
   updateUserValidator,
   deleteUserValidator,
   updateLoggedUserValidator,
+  updateLoggedUserPasswordValidator,
   createDoctorValidator,
   getDoctorValidator,
   updateDoctorValidator,
@@ -15,8 +16,6 @@ const {
 const {
   getUsers,
   getUser,
-  createUser,
-  updateUser,
   deleteUser,
   uploadUserImage,
   resizeImage,
@@ -96,6 +95,9 @@ router.get("/getMe", protect, getLoggedUserData, getUser);
  *               newPassword:
  *                 type: string
  *                 example: "newStrongPass456"
+ *               passwordConfirm:
+ *                 type: string
+ *                 example: "newStrongPass456"
  *     responses:
  *       200:
  *         description: Password updated successfully
@@ -104,7 +106,10 @@ router.get("/getMe", protect, getLoggedUserData, getUser);
  *       401:
  *         description: Unauthorized
  */
-router.put("/updateMyPassword", protect, updateLoggedUserPassword);
+router.put("/updateMyPassword",
+   protect,
+   updateLoggedUserPasswordValidator,
+    updateLoggedUserPassword);
 
 /**
  * @swagger
@@ -180,52 +185,12 @@ router.delete("/deleteMe", protect, deleteLoggedUserData);
  *       403:
  *         description: Forbidden
  *
- *   post:
- *     summary: Create a new user
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     description: Admin can create a new user with optional profile image upload.
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             required:
- *               - name
- *               - email
- *               - password
- *             properties:
- *               name:
- *                 type: string
- *                 example: "New User"
- *               email:
- *                 type: string
- *                 example: "newuser@example.com"
- *               password:
- *                 type: string
- *                 example: "12345678"
- *               image:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: User created successfully
- *       400:
- *         description: Invalid input data
+
  */
 router
   .route("/")
   .get(protect, allowedTo("admin"), getUsers)
-  .post(
-    protect,
-    allowedTo("admin"),
-    uploadUserImage,
-    resizeImage,
-    createUserValidator,
-    createUser
-  );
+
 
 /**
  * @swagger
@@ -248,37 +213,7 @@ router
  *       404:
  *         description: User not found
  *
- *   put:
- *     summary: Update a user
- *     tags: [Users]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         multipart/form-data:
- *           schema:
- *             type: object
- *             properties:
- *               name:
- *                 type: string
- *               email:
- *                 type: string
- *               image:
- *                 type: string
- *                 format: binary
- *     responses:
- *       200:
- *         description: User updated successfully
- *       404:
- *         description: User not found
- *
+
  *   delete:
  *     summary: Delete a user
  *     tags: [Users]
@@ -299,14 +234,6 @@ router
 router
   .route("/:id")
   .get(protect, allowedTo("admin"), getUserValidator, getUser)
-  .put(
-    protect,
-    allowedTo("admin"),
-    uploadUserImage,
-    resizeImage,
-    updateUserValidator,
-    updateUser
-  )
   .delete(protect, allowedTo("admin"), deleteUserValidator, deleteUser);
 
 //
@@ -333,6 +260,8 @@ router
  *               - name
  *               - email
  *               - password
+ *               - specialization
+ *               - academicTitle
  *             properties:
  *               name:
  *                 type: string
@@ -342,13 +271,20 @@ router
  *                 example: "doctor@example.com"
  *               password:
  *                 type: string
- *                 example: "doctor1234"
+ *                 example: "Doctor@1234"
+ *               specialization:
+ *                 type: string
+ *                 example: "Computer Science"
+ *               academicTitle:
+ *                 type: string
+ *                 example: "Assistant Professor"
  *     responses:
  *       201:
  *         description: Doctor created successfully
  *       400:
  *         description: Invalid input data
  */
+
 router.post(
   "/admin/doctors",
   protect,

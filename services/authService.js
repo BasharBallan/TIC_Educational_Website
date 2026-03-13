@@ -15,12 +15,17 @@ const getMessage = require("../utils/getMessage");
 // @route   POST /api/v1/auth/signup
 // @access  Public
 
+
 exports.signup = asyncHandler(async (req, res, next) => {
   const { name, email, password, studentNumber, year, semester } = req.body;
 
+  // Duplicate email check
   const existingUser = await User.findOne({ email });
   if (existingUser) {
-    return next(new ApiError(getMessage("email_already_used", req.lang), 400));
+    return res.status(400).json({
+      status: "fail",
+      message: "Email already in use",
+    });
   }
 
   const student = await User.create({
@@ -40,11 +45,12 @@ exports.signup = asyncHandler(async (req, res, next) => {
 
   res.status(201).json({
     status: "success",
-    message: getMessage("signup_success", req.lang),
+    message: "Signup successful",
     data: student,
     token,
   });
 });
+
 
 
 // @desc    Login
@@ -78,7 +84,7 @@ exports.login = asyncHandler(async (req, res, next) => {
 
 // @desc    Admin Signup
 // @route   POST /api/v1/auth/adminSignup
-// @access  Public (لكن عمليًا تستعملها مرة لتوليد admin)
+// @access  Public but it uses one time just to create Admin
 exports.AdminSignup = asyncHandler(async (req, res, next) => {
 
 

@@ -5,8 +5,10 @@
   "main": "index.js",
   "scripts": {
     "start:dev": "node --watch server.js",
-    "start": "NODE_ENV=production node server.js"
+    "start": "NODE_ENV=production node server.js",
+    "test": "cross-env NODE_ENV=test jest --runInBand"
   },
+ 
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -35,6 +37,7 @@
     "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "eslint": "^8.5.0",
     "eslint-config-airbnb": "^19.0.4",
     "eslint-config-prettier": "^8.3.0",
@@ -43,8 +46,10 @@
     "eslint-plugin-node": "^11.1.0",
     "eslint-plugin-prettier": "^4.0.0",
     "eslint-plugin-react": "^7.28.0",
+    "jest": "^30.2.0",
     "nodemon": "^2.0.22",
-    "prettier": "^2.5.1"
+    "prettier": "^2.5.1",
+    "supertest": "^7.2.2"
   },
   "engines": {
     "node": "^20.11.1"

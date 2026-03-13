@@ -61,39 +61,18 @@ exports.updateLoggedUserPasswordValidator = [
 
   body("newPassword")
     .notEmpty()
-    .withMessage("New password is required")
-    .isStrongPassword()
-    .withMessage(
-      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
-    )
-    .custom(async (val, { req }) => {
-      const user = await User.findById(req.user._id);
-      if (!user) throw new Error("User not found");
-
-      // Check current password correctness
-      const isCorrect = await bcrypt.compare(
-        req.body.currentPassword,
-        user.password
-      );
-      if (!isCorrect) throw new Error("Incorrect current password");
-
-      // Prevent using the same password again
-      if (val === req.body.currentPassword)
-        throw new Error("New password must be different from current password");
-
-      // Check password confirmation
-      if (val !== req.body.passwordConfirm)
-        throw new Error("Password confirmation does not match");
-
-      return true;
-    }),
+    .withMessage("New password is required"),
 
   body("passwordConfirm")
     .notEmpty()
     .withMessage("Password confirmation is required"),
 
+ 
+
   validatorMiddleware,
 ];
+
+
 
 
 // ------------------------------------------------------

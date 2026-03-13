@@ -58,23 +58,38 @@ exports.getLoggedUserData = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/users/updateMyPassword
 // @access  Private/Protect
 exports.updateLoggedUserPassword = asyncHandler(async (req, res, next) => {
-  // 1) Update user password based user payload (req.user._id)
-  const user = await User.findByIdAndUpdate(
-    req.user._id,
-    {
-      password: await bcrypt.hash(req.body.newPassword, 12),
-      passwordChangedAt: Date.now(),
-    },
-    {
-      new: true,
-    }
-  );
 
-  // 2) Generate token
+  const user = await User.findById(req.user._id).select("+password");
+
+
+  if (!user) {
+    return next(new ApiError("User not found", 404));
+  }
+
+  const isCorrect = await bcrypt.compare(req.body.currentPassword, user.password);
+  if (!isCorrect) {
+    return next(new ApiError("Incorrect current password", 400));
+  }
+
+  if (req.body.newPassword === req.body.currentPassword) {
+    return next(
+      new ApiError("New password must be different from current password", 400)
+    );
+  }
+user.passwordConfirm = req.body.passwordConfirm;
+  if (req.body.newPassword !== req.body.passwordConfirm) {
+    return next(new ApiError("Password confirmation does not match", 400));
+  }
+
+  user.password = req.body.newPassword;
+  user.passwordChangedAt = Date.now();
+  await user.save();
+
   const token = createToken(user._id);
 
-  res.status(200).json({ data: user, token });
+  res.status(200).json({ token });
 });
+
 
 // @desc    Update logged user data (without password, role)
 // @route   PUT /api/v1/users/updateMe
@@ -165,13 +180,24 @@ exports.getDoctor = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/admin/doctors/:id
 // @access  Private/Admin
 exports.updateDoctor = asyncHandler(async (req, res, next) => {
-  const { email, password, ...allowedUpdates } = req.body;
+const { email, password, ...allowedUpdates } = req.body;
 
-  const doctor = await User.findOneAndUpdate(
-    { _id: req.params.id, role: "doctor" },
-    allowedUpdates,
-    { new: true }
-  );
+// Map specialization → doctorData.specialization
+if (req.body.specialization) {
+  allowedUpdates["doctorData.specialization"] = req.body.specialization;
+}
+
+// Map academicTitle → doctorData.academicTitle
+if (req.body.academicTitle) {
+  allowedUpdates["doctorData.academicTitle"] = req.body.academicTitle;
+}
+
+const doctor = await User.findOneAndUpdate(
+  { _id: req.params.id, role: "doctor" },
+  allowedUpdates,
+  { new: true }
+);
+
 
   if (!doctor) {
     return next(new ApiError(getMessage("doctor_not_found", req.lang), 404));

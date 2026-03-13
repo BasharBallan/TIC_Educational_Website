@@ -1,3 +1,5 @@
+const Semester = require("../models/semesterModel");
+
 module.exports = {
   // =========================
   // 🔐 Auth Service
@@ -34,6 +36,7 @@ module.exports = {
 
   password_reset_success: { en: 'Password reset successfully.', ar: 'تمت إعادة تعيين كلمة المرور بنجاح.' },
 
+  email_already_used: { en: 'email is already in use.', ar: 'البريد الإلكتروني مستخدم بالفعل.' },
   // =========================
   // 👤 User
   // =========================
@@ -48,6 +51,14 @@ module.exports = {
   user_list: { en: 'Users list fetched successfully.', ar: 'تم جلب قائمة المستخدمين بنجاح.' },
 
  
+  lecture_deleted: { en: 'Lecture deleted successfully.', ar: 'تم حذف المحاضرة بنجاح.' },
+
+
+  lecture_saved: { en: 'Lecture added successfully to your saved list.', ar: 'تمت إضافة المحاضرة إلى قائمة المحاضرات المحفوظة بنجاح.' },
+  lecture_unsaved: { en: 'Lecture removed successfully from your saved list.', ar: 'تمت إزالة المحاضرة من قائمة المحاضرات المحفوظة بنجاح.' },
+  saved_lectures_cleared: { en: 'All saved lectures have been deleted successfully.', ar: 'تم حذف جميع المحاضرات المحفوظة بنجاح.' },
+  semester_deleted: { en: 'Semester deleted successfully.', ar: 'تم حذف الفصل الدراسي بنجاح.' },
+  subject_deleted:{ en: 'Subject deleted successfully.', ar: 'تم حذف المادة بنجاح.' },
   // =========================
   // 🏷️ Brand
   // =========================

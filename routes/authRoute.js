@@ -3,6 +3,9 @@ const express = require("express");
 const {
   signupValidator,
   loginValidator,
+  adminLoginValidator,
+  adminSignupValidator,
+  forgotPasswordValidator,
 } = require("../utils/validators/authValidator");
 
 const {
@@ -126,7 +129,7 @@ router.post("/login", loginValidator, login);
  *         description: Invalid admin credentials
  */
 
-router.post("/adminLogin", Adminlogin);
+router.post("/adminLogin",adminLoginValidator, Adminlogin);
 
 /**
  * @swagger
@@ -162,7 +165,7 @@ router.post("/adminLogin", Adminlogin);
  *         description: Invalid input data
  */
 
-router.post("/adminSignup", AdminSignup);
+router.post("/adminSignup",adminSignupValidator, AdminSignup);
 
 /**
  * @swagger
@@ -189,7 +192,7 @@ router.post("/adminSignup", AdminSignup);
  *       404:
  *         description: Email not found
  */
-router.post("/forgotPassword", forgotPassword);
+router.post("/forgotPassword", forgotPasswordValidator, forgotPassword);
 
 /**
  * @swagger

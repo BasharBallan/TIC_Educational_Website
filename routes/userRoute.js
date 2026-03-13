@@ -2,8 +2,6 @@ const express = require("express");
 
 const {
   getUserValidator,
-  createUserValidator,
-  updateUserValidator,
   deleteUserValidator,
   updateLoggedUserValidator,
   updateLoggedUserPasswordValidator,
@@ -104,10 +102,12 @@ router.get("/getMe", protect, getLoggedUserData, getUser);
  *       401:
  *         description: Unauthorized
  */
-router.put("/updateMyPassword",
-   protect,
-   updateLoggedUserPasswordValidator,
-    updateLoggedUserPassword);
+router.put(
+  "/updateMyPassword",
+  protect,
+  updateLoggedUserPasswordValidator,
+  updateLoggedUserPassword
+);
 
 /**
  * @swagger

@@ -18,7 +18,12 @@ const userSchema = new mongoose.Schema(
       unique: [true, "your email is already used"],
       lowercase: true,
     },
-    phone: { type: String, unique: [true, "your phone is already used"] },
+    phone: {
+  type: String,
+  unique: true,
+  sparse: true,
+},
+
     profileImg: String,
 
     password: {

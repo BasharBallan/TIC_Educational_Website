@@ -3,6 +3,8 @@ const factory = require('./handlersFactory');
 const User = require("../models/userModel");
 const Year = require("../models/yearModel");
 const Semester = require("../models/semesterModel");
+const asyncHandler = require("express-async-handler");
+const ApiError = require("../utils/apiError");
 
 // @desc    Get all subjects
 // @route   GET /api/v1/subjects
@@ -16,45 +18,54 @@ exports.getSubject = factory.getOne(Subject);
 
 // @desc    Create new subject
 // @route   POST /api/v1/subjects
-// @access  Private/Adminexports.createSubject = async (req, res, next) => {
-  exports.createSubject = async (req, res, next) => {
-  try {
-    const { name, code, description, doctorId, yearId, semesterId } = req.body;
+// @access  Private/Admin
+exports.createSubject = asyncHandler(async (req, res, next) => {
+  const { name, code, description, doctorId, yearId, semesterId } = req.body;
 
-    const subject = await Subject.create({
-      name,
-      code,
-      description,
-      doctorId: doctorId,
-      yearId: yearId,
-      semesterId: semesterId
-    });
+  // Check doctor exists
+  const doctor = await User.findById(doctorId);
+  if (!doctor) return next(new ApiError("Doctor not found", 404));
+  if (doctor.role !== "doctor")
+    return next(new ApiError("Assigned user is not a doctor", 400));
 
- await User.findByIdAndUpdate(doctorId, {
-  $push: { "doctorData.subjects": subject._id }
+  // Check year exists
+  const year = await Year.findById(yearId);
+  if (!year) return next(new ApiError("Year not found", 404));
+
+  // Check semester exists
+  const semester = await Semester.findById(semesterId);
+  if (!semester) return next(new ApiError("Semester not found", 404));
+
+  // Create subject
+  const subject = await Subject.create({
+    name,
+    code,
+    description,
+    doctorId,
+    yearId,
+    semesterId,
+  });
+
+  // Add subject to doctor
+  await User.findByIdAndUpdate(doctorId, {
+    $addToSet: { "doctorData.subjects": subject._id },
+  });
+
+  // Add subject to year
+  await Year.findByIdAndUpdate(yearId, {
+    $addToSet: { subjects: subject._id },
+  });
+
+  // Add subject to semester
+  await Semester.findByIdAndUpdate(semesterId, {
+    $addToSet: { subjects: subject._id },
+  });
+
+  res.status(201).json({
+    status: "success",
+    data: subject,
+  });
 });
-
-
-    await Year.findByIdAndUpdate(yearId, {
-      $push: { subjects: subject._id }
-    });
-
-    await Semester.findByIdAndUpdate(semesterId, {
-      $push: { subjects: subject._id }
-    });
-
-    res.status(201).json({
-      status: "success",
-      data: subject
-    });
-
-  } catch (err) {
-    next(err);
-  }
-};
-
-
-
 
 // @desc    Update subject by id
 // @route   PUT /api/v1/subjects/:id

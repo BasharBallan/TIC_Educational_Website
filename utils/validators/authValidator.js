@@ -6,6 +6,7 @@ const validatorMiddleware = require("../../middlewares/validatorMiddleware");
 // ------------------------------------------------------
 // Signup Validator
 // ------------------------------------------------------
+
 exports.signupValidator = [
   check("name")
     .notEmpty()
@@ -21,14 +22,7 @@ exports.signupValidator = [
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
-    .withMessage("Invalid email format")
-    .custom((val) =>
-      User.findOne({ email: val }).then((user) => {
-        if (user) {
-          return Promise.reject(new Error("Email already in use"));
-        }
-      })
-    ),
+    .withMessage("Invalid email format"),
 
   check("password")
     .notEmpty()
@@ -50,6 +44,8 @@ exports.signupValidator = [
 
   validatorMiddleware,
 ];
+
+
 
 // ------------------------------------------------------
 // Login Validator

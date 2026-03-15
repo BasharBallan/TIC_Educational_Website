@@ -1,6 +1,7 @@
 const express = require("express");
 const { protect, allowedTo } = require("../services/authService");
 const { uploadLectureFile } = require("../middlewares/uploadAnyFileMiddlware");
+const { cache } = require("../middlewares/cache");
 
 const {
   getMyLectures,
@@ -45,7 +46,11 @@ const router = express.Router();
  */
 router.use(protect, allowedTo("doctor"));
 
-router.get("/", getMyLectures);
+router.get(
+  "/",
+  cache((req) => `lectures:doctor:${req.user._id}`),
+  getMyLectures
+);
 
 /**
  * @swagger
@@ -109,7 +114,12 @@ router.post("/", uploadLectureFile, createMyLectureValidator, createMyLecture);
  *       401:
  *         description: Unauthorized
  */
-router.get("/:id", getMyLectureValidator, getMyLecture);
+router.get(
+  "/:id",
+  getMyLectureValidator,
+  cache((req) => `lecture:${req.params.id}`),
+  getMyLecture
+);
 
 /**
  * @swagger

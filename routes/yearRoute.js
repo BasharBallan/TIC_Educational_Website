@@ -1,15 +1,14 @@
 const express = require("express");
 const { protect, allowedTo } = require("../services/authService");
+const { cache } = require("../middlewares/cache");
 
 const {
   getYears,
   getYear,
-
 } = require("../services/yearService");
 
 const {
   getYearValidator,
-
 } = require("../utils/validators/yearValidator");
 
 const router = express.Router();
@@ -38,9 +37,13 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
-router.get("/", protect, allowedTo("admin"), getYears);
-
-
+router.get(
+  "/",
+  protect,
+  allowedTo("admin"),
+  cache(() => "years:all"),
+  getYears
+);
 
 /**
  * @swagger
@@ -72,9 +75,8 @@ router.get(
   protect,
   allowedTo("admin"),
   getYearValidator,
+  cache((req) => `year:${req.params.id}`),
   getYear
 );
-
-
 
 module.exports = router;

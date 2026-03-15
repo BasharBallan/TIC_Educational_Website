@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, allowedTo } = require("../services/authService");
+const { cache } = require("../middlewares/cache");
 
 const {
   getLectures,
@@ -42,9 +43,12 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
-router.get("/", protect, getLectures);
-
-
+router.get(
+  "/",
+  protect,
+  cache(() => "lectures:all"),
+  getLectures
+);
 
 /**
  * @swagger
@@ -74,9 +78,9 @@ router.get(
   "/:id",
   protect,
   getLectureValidator,
+  cache((req) => `lecture:${req.params.id}`),
   getLecture
 );
-
 
 /**
  * @swagger

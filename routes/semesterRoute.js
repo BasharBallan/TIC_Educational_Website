@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, allowedTo } = require("../services/authService");
+const { cache } = require("../middlewares/cache");
 
 const {
   getSemesters,
@@ -35,7 +36,13 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
-router.get("/", protect, allowedTo("admin"), getSemesters);
+router.get(
+  "/",
+  protect,
+  allowedTo("admin"),
+  cache(() => "semesters:all"),
+  getSemesters
+);
 
 /**
  * @swagger
@@ -99,7 +106,13 @@ router.post("/", protect, allowedTo("admin"), createSemester);
  *       403:
  *         description: Forbidden
  */
-router.get("/:id", protect, allowedTo("admin"), getSemester);
+router.get(
+  "/:id",
+  protect,
+  allowedTo("admin"),
+  cache((req) => `semester:${req.params.id}`),
+  getSemester
+);
 
 /**
  * @swagger
@@ -164,7 +177,5 @@ router.put("/:id", protect, allowedTo("admin"), updateSemester);
  *         description: Forbidden
  */
 router.delete("/:id", protect, allowedTo("admin"), deleteSemester);
-
-
 
 module.exports = router;

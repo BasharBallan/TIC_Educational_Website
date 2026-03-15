@@ -5,6 +5,7 @@ const Year = require("../models/yearModel");
 const Semester = require("../models/semesterModel");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
+const cacheService = require("../services/cacheService");
 
 // @desc    Get all subjects
 // @route   GET /api/v1/subjects
@@ -61,6 +62,9 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
     $addToSet: { subjects: subject._id },
   });
 
+  // Cache invalidation
+  await cacheService.del("subjects:all");
+
   res.status(201).json({
     status: "success",
     data: subject,
@@ -70,9 +74,25 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
 // @desc    Update subject by id
 // @route   PUT /api/v1/subjects/:id
 // @access  Private/Admin
-exports.updateSubject = factory.updateOne(Subject);
+exports.updateSubject = async (req, res, next) => {
+  const handler = factory.updateOne(Subject);
+
+  await handler(req, res, async () => {
+    await cacheService.del("subjects:all");
+    await cacheService.del(`subject:${req.params.id}`);
+    next();
+  });
+};
 
 // @desc    Delete subject by id
 // @route   DELETE /api/v1/subjects/:id
 // @access  Private/Admin
-exports.deleteSubject = factory.deleteOne(Subject);
+exports.deleteSubject = async (req, res, next) => {
+  const handler = factory.deleteOne(Subject);
+
+  await handler(req, res, async () => {
+    await cacheService.del("subjects:all");
+    await cacheService.del(`subject:${req.params.id}`);
+    next();
+  });
+};

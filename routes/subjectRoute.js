@@ -1,5 +1,6 @@
 const express = require("express");
 const { protect, allowedTo } = require("../services/authService");
+const { cache } = require("../middlewares/cache");
 
 const {
   getSubjects,
@@ -42,7 +43,13 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
-router.get("/", protect, allowedTo("admin"), getSubjects);
+router.get(
+  "/",
+  protect,
+  allowedTo("admin"),
+  cache(() => "subjects:all"),
+  getSubjects
+);
 
 /**
  * @swagger
@@ -117,6 +124,7 @@ router.get(
   protect,
   allowedTo("admin"),
   getSubjectValidator,
+  cache((req) => `subject:${req.params.id}`),
   getSubject
 );
 

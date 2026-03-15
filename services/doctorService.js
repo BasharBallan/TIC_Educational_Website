@@ -3,12 +3,11 @@ const Lecture = require("../models/lectureModel");
 const User = require("../models/userModel");
 const Subject = require("../models/subjectModel");
 const ApiError = require("../utils/apiError");
-const { uploadLectureFile } = require("../middlewares/uploadAnyFileMiddlware");
+const cacheService = require("../services/cacheService");
+
 // ------------------------------------------------------
 // Helper Function
 // ------------------------------------------------------
-// @desc    Check if doctor teaches this subject
-// @note    Prevents unauthorized lecture creation/update
 const doctorTeachesSubject = (doctor, subjectId) => {
   return doctor.doctorData.subjects.some(
     (sub) => sub.toString() === subjectId.toString()
@@ -21,7 +20,7 @@ const doctorTeachesSubject = (doctor, subjectId) => {
 // @access  Private/Doctor
 // ------------------------------------------------------
 exports.getMyLectures = asyncHandler(async (req, res, next) => {
-  const lectures = await Lecture.find({ doctor: req.user._id });
+  const lectures = await Lecture.find({ doctorId: req.user._id });
 
   res.status(200).json({
     status: "success",
@@ -52,7 +51,7 @@ exports.getMyLecture = asyncHandler(async (req, res, next) => {
 });
 
 // ------------------------------------------------------
-// @desc    Create a new lecture (only for subjects the doctor teaches)
+// @desc    Create a new lecture
 // @route   POST /api/v1/doctor/lectures
 // @access  Private/Doctor
 // ------------------------------------------------------
@@ -61,9 +60,7 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
 
   // 1) Check subject exists
   const subjectDoc = await Subject.findById(subjectId);
-  if (!subjectDoc) {
-    return next(new ApiError("Subject not found", 404));
-  }
+  if (!subjectDoc) return next(new ApiError("Subject not found", 404));
 
   // 2) Check doctor teaches this subject
   if (!doctorTeachesSubject(req.user, subjectId)) {
@@ -90,15 +87,20 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
 
   // 5) Add lecture to subject
   await Subject.findByIdAndUpdate(subjectId, {
-    $push: { lectures: lecture._id }
+    $push: { lectures: lecture._id },
   });
 
-  // 6) Add lecture to doctor (inside user.doctorData.lectures)
+  // 6) Add lecture to doctor
   await User.findByIdAndUpdate(req.user._id, {
-    $push: { "doctorData.lectures": lecture._id }
+    $push: { "doctorData.lectures": lecture._id },
   });
 
-  // 7) Response
+  // ------------------------------------------------------
+  // CACHE INVALIDATION
+  // ------------------------------------------------------
+  await cacheService.del(`lectures:doctor:${req.user._id}`);
+  await cacheService.del(`lectures:subject:${subjectId}`);
+
   res.status(201).json({
     status: "success",
     data: lecture,
@@ -106,7 +108,7 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
 });
 
 // ------------------------------------------------------
-// @desc    Update lecture (only if doctor owns it)
+// @desc    Update lecture
 // @route   PUT /api/v1/doctor/lectures/:id
 // @access  Private/Doctor
 // ------------------------------------------------------
@@ -121,8 +123,8 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
   }
 
   // If subject is being changed → validate again
-  if (req.body.subject) {
-    if (!doctorTeachesSubject(req.user, req.body.subject)) {
+  if (req.body.subjectId) {
+    if (!doctorTeachesSubject(req.user, req.body.subjectId)) {
       return next(new ApiError("You are not assigned to this subject", 403));
     }
   }
@@ -131,6 +133,13 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
     new: true,
   });
 
+  // ------------------------------------------------------
+  // CACHE INVALIDATION
+  // ------------------------------------------------------
+  await cacheService.del(`lecture:${req.params.id}`);
+  await cacheService.del(`lectures:doctor:${req.user._id}`);
+  await cacheService.del(`lectures:subject:${updated.subjectId}`);
+
   res.status(200).json({
     status: "success",
     data: updated,
@@ -138,7 +147,7 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
 });
 
 // ------------------------------------------------------
-// @desc    Delete lecture (only if doctor owns it)
+// @desc    Delete lecture
 // @route   DELETE /api/v1/doctor/lectures/:id
 // @access  Private/Doctor
 // ------------------------------------------------------
@@ -151,6 +160,13 @@ exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
   if (!lecture) {
     return next(new ApiError("Lecture not found or not yours", 404));
   }
+
+  // ------------------------------------------------------
+  // CACHE INVALIDATION
+  // ------------------------------------------------------
+  await cacheService.del(`lecture:${req.params.id}`);
+  await cacheService.del(`lectures:doctor:${req.user._id}`);
+  await cacheService.del(`lectures:subject:${lecture.subjectId}`);
 
   res.status(200).json({
     status: "success",

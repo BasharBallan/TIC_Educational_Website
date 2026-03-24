@@ -16,6 +16,12 @@ const {
   resetPassword,
   AdminSignup,
   Adminlogin,
+  refreshToken,
+  logout,
+  protect,
+  getMySessions,
+  logoutFromSession,
+  logoutFromOtherSessions,
 } = require("../services/authService");
 
 const router = express.Router();
@@ -27,6 +33,9 @@ const router = express.Router();
  *   description: Authentication & Authorization APIs
  */
 
+/* =====================================================================
+   STUDENT SIGNUP
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/signup:
@@ -64,16 +73,18 @@ const router = express.Router();
  *       400:
  *         description: Invalid input data
  */
-
 router.post("/signup", signupValidator, signup);
 
+/* =====================================================================
+   LOGIN (STUDENT / DOCTOR) — Updated to match new authService logic
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/login:
  *   post:
  *     summary: Student Login
  *     tags: [Auth]
- *     description: Login using email and password. Use the example credentials below for testing.
+ *     description: Login using email and password. Includes device detection, session creation, and refresh token rotation.
  *     requestBody:
  *       required: true
  *       content:
@@ -96,9 +107,11 @@ router.post("/signup", signupValidator, signup);
  *       401:
  *         description: Invalid credentials
  */
-
 router.post("/login", loginValidator, login);
 
+/* =====================================================================
+   ADMIN LOGIN
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/adminLogin:
@@ -128,9 +141,11 @@ router.post("/login", loginValidator, login);
  *       401:
  *         description: Invalid admin credentials
  */
+router.post("/adminLogin", adminLoginValidator, Adminlogin);
 
-router.post("/adminLogin",adminLoginValidator, Adminlogin);
-
+/* =====================================================================
+   ADMIN SIGNUP
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/adminSignup:
@@ -164,9 +179,11 @@ router.post("/adminLogin",adminLoginValidator, Adminlogin);
  *       400:
  *         description: Invalid input data
  */
+router.post("/adminSignup", adminSignupValidator, AdminSignup);
 
-router.post("/adminSignup",adminSignupValidator, AdminSignup);
-
+/* =====================================================================
+   FORGOT PASSWORD
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/forgotPassword:
@@ -194,6 +211,9 @@ router.post("/adminSignup",adminSignupValidator, AdminSignup);
  */
 router.post("/forgotPassword", forgotPasswordValidator, forgotPassword);
 
+/* =====================================================================
+   VERIFY RESET CODE
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/verifyResetCode:
@@ -221,6 +241,9 @@ router.post("/forgotPassword", forgotPasswordValidator, forgotPassword);
  */
 router.post("/verifyResetCode", verifyPassResetCode);
 
+/* =====================================================================
+   RESET PASSWORD
+   ===================================================================== */
 /**
  * @swagger
  * /api/v1/auth/resetPassword:
@@ -251,5 +274,95 @@ router.post("/verifyResetCode", verifyPassResetCode);
  *         description: Invalid request data
  */
 router.put("/resetPassword", resetPassword);
+
+/* =====================================================================
+   REFRESH TOKEN
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/refresh:
+ *   post:
+ *     summary: Refresh Access Token
+ *     tags: [Auth]
+ *     description: Generate a new access token using a valid refresh token. Implements refresh token rotation and session validation.
+ *     responses:
+ *       200:
+ *         description: Token refreshed successfully
+ *       401:
+ *         description: Invalid or expired refresh token
+ */
+router.post("/refresh", refreshToken);
+
+/* =====================================================================
+   LOGOUT
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/logout:
+ *   post:
+ *     summary: Logout
+ *     tags: [Auth]
+ *     description: Logout the user and invalidate all active sessions. Clears refresh token cookie.
+ *     responses:
+ *       200:
+ *         description: Logged out successfully
+ */
+router.post("/logout", logout);
+
+/* =====================================================================
+   SESSION MANAGEMENT (NEW)
+   ===================================================================== */
+
+/**
+ * @swagger
+ * /api/v1/auth/sessions:
+ *   get:
+ *     summary: Get all active sessions
+ *     tags: [Auth]
+ *     description: Returns all active login sessions for the authenticated user.
+ *     responses:
+ *       200:
+ *         description: Sessions retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/sessions", protect, getMySessions);
+
+/**
+ * @swagger
+ * /api/v1/auth/sessions/{sessionId}:
+ *   delete:
+ *     summary: Logout from a specific session
+ *     tags: [Auth]
+ *     description: Terminates a specific session by its ID.
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: ID of the session to terminate
+ *     responses:
+ *       200:
+ *         description: Session terminated successfully
+ *       404:
+ *         description: Session not found
+ */
+router.delete("/sessions/:sessionId", protect, logoutFromSession);
+
+/**
+ * @swagger
+ * /api/v1/auth/sessions:
+ *   delete:
+ *     summary: Logout from all other sessions
+ *     tags: [Auth]
+ *     description: Terminates all sessions except the current one (based on refresh token).
+ *     responses:
+ *       200:
+ *         description: All other sessions terminated
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete("/sessions", protect, logoutFromOtherSessions);
 
 module.exports = router;

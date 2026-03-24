@@ -8,6 +8,7 @@ const {
   createSubject,
   updateSubject,
   deleteSubject,
+  getMySubjects
 } = require("../services/subjectService");
 
 const {
@@ -92,6 +93,32 @@ router.post(
   allowedTo("admin"),
   createSubjectValidator,
   createSubject
+);
+
+/**
+ * @swagger
+ * /api/v1/subjects/my-subjects:
+ *   get:
+ *     summary: Get all subjects for the logged-in student's academic year
+ *     tags: [Subjects]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns all subjects that belong to the academic year of the authenticated student.
+ *     responses:
+ *       200:
+ *         description: Subjects retrieved successfully
+ *       400:
+ *         description: Student year not found
+ *       401:
+ *         description: Unauthorized
+ */
+
+
+router.get(
+  "/my-subjects",
+  protect,
+  allowedTo("student"),
+  getMySubjects
 );
 
 /**
@@ -203,5 +230,7 @@ router.delete(
   deleteSubjectValidator,
   deleteSubject
 );
+
+
 
 module.exports = router;

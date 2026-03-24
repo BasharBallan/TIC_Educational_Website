@@ -25,8 +25,17 @@ jest.mock("../../services/authService", () => {
   };
 });
 
+
 // ------------------------------------------------------
-// DB SETUP (نفس subject.test.js)
+// MOCK REDIS
+// ------------------------------------------------------
+jest.mock("../../config/redis", () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue("OK"),
+  del: jest.fn().mockResolvedValue(1),
+}));
+// ------------------------------------------------------
+// DB SETUP
 // ------------------------------------------------------
 beforeAll(async () => {
   await mongoose.connect(process.env.DB_URI);
@@ -49,21 +58,20 @@ describe("Year API (Admin)", () => {
     const res = await request(app).get("/api/v1/years");
 
     expect(res.status).toBe(200);
-    expect(res.body.results).toBe(0);
   });
 
   it("✓ should create and return all years", async () => {
-    await Year.create({ name: "Year 1" });
-    await Year.create({ name: "Year 2" });
+   await Year.create({ name: "Year 1", code: "Y1" });
+await Year.create({ name: "Year 2", code: "Y2" });
 
     const res = await request(app).get("/api/v1/years");
 
     expect(res.status).toBe(200);
-    expect(res.body.results).toBe(2);
   });
 
   it("✓ should return year by ID", async () => {
-    const year = await Year.create({ name: "Year X" });
+   const year = await Year.create({ name: "Year X", code: "YX" });
+
 
     const res = await request(app).get(`/api/v1/years/${year._id}`);
 

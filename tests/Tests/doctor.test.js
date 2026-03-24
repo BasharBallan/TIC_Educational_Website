@@ -44,6 +44,15 @@ jest.mock("../../middlewares/uploadAnyFileMiddlware", () => ({
   }
 }));
 
+
+// ------------------------------------------------------
+// MOCK REDIS
+// ------------------------------------------------------
+jest.mock("../../config/redis", () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue("OK"),
+  del: jest.fn().mockResolvedValue(1),
+}));
 // ------------------------------------------------------
 // DB SETUP
 // ------------------------------------------------------

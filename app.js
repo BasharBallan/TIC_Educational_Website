@@ -5,6 +5,7 @@ const cors = require('cors');
 const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
+const cookieParser = require("cookie-parser"); 
 
 const langMiddleware = require('./middlewares/langMiddleware');
 const mountRoutes = require('./routes');
@@ -23,6 +24,9 @@ app.use(compression());
 // Body parser
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'uploads')));
+
+//cookie parser
+app.use(cookieParser());
 
 // Logger
 if (process.env.NODE_ENV === 'development') {

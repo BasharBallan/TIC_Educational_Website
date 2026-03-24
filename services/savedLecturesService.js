@@ -5,9 +5,13 @@ const ApiError = require('../utils/apiError');
 const getMessage = require('../utils/getMessage');
 
 
+// ======================================================================
+// ADD LECTURE TO SAVED LIST
+// ======================================================================
 // @desc    Add lecture to saved list
 // @route   POST /api/v1/saved-lectures
-// @access  Protected/User
+// @access  Private/User
+// ======================================================================
 exports.addLectureToSaved = asyncHandler(async (req, res, next) => {
   const lectureId = req.body.lectureId;
 
@@ -31,9 +35,13 @@ exports.addLectureToSaved = asyncHandler(async (req, res, next) => {
 });
 
 
+// ======================================================================
+// REMOVE LECTURE FROM SAVED LIST
+// ======================================================================
 // @desc    Remove lecture from saved list
 // @route   DELETE /api/v1/saved-lectures/:lectureId
-// @access  Protected/User
+// @access  Private/User
+// ======================================================================
 exports.removeLectureFromSaved = asyncHandler(async (req, res, next) => {
   const lectureId = req.params.lectureId;
 
@@ -57,9 +65,13 @@ exports.removeLectureFromSaved = asyncHandler(async (req, res, next) => {
 });
 
 
+// ======================================================================
+// GET LOGGED USER SAVED LECTURES
+// ======================================================================
 // @desc    Get logged user saved lectures
 // @route   GET /api/v1/saved-lectures
-// @access  Protected/User
+// @access  Private/User
+// ======================================================================
 exports.getLoggedUserSavedLectures = asyncHandler(async (req, res, next) => {
   const user = await User.findById(req.user._id).populate(
     "studentData.savedLectures"
@@ -73,9 +85,13 @@ exports.getLoggedUserSavedLectures = asyncHandler(async (req, res, next) => {
 });
 
 
+// ======================================================================
+// DELETE ALL SAVED LECTURES
+// ======================================================================
 // @desc    Delete all saved lectures
 // @route   DELETE /api/v1/saved-lectures
-// @access  Protected/User
+// @access  Private/User
+// ======================================================================
 exports.deleteAllSavedLectures = asyncHandler(async (req, res, next) => {
   const user = await User.findByIdAndUpdate(
     req.user._id,

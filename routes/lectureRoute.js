@@ -3,9 +3,11 @@ const { protect, allowedTo } = require("../services/authService");
 const { cache } = require("../middlewares/cache");
 
 const {
+
   getLectures,
   getLecture,
   deleteLecture,
+  getMyLectures,
 } = require("../services/lectureService");
 
 const {
@@ -49,6 +51,7 @@ router.get(
   cache(() => "lectures:all"),
   getLectures
 );
+router.get("/my-lectures", protect, allowedTo("student"), getMyLectures);
 
 /**
  * @swagger
@@ -114,5 +117,8 @@ router.delete(
   deleteLectureValidator,
   deleteLecture
 );
+
+
+
 
 module.exports = router;

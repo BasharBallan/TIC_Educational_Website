@@ -1,5 +1,5 @@
 /**
- * Subject API Tests (Admin Only)
+ * Subject API Tests (Admin + Student)
  */
 
 require("dotenv").config({ path: "config.env.test" });
@@ -14,24 +14,35 @@ const Year = require("../../models/yearModel");
 const Semester = require("../../models/semesterModel");
 
 // ------------------------------------------------------
-// MOCK AUTH (Admin)
+// MOCK AUTH
 // ------------------------------------------------------
 jest.mock("../../services/authService", () => {
   const original = jest.requireActual("../../services/authService");
 
   return {
     ...original,
-    protect: (req, res, next) => {
-      req.user = {
-        _id: "65f123456789abcdef123456",
-        role: "admin",
+    protect: jest.fn(),
+    allowedTo: jest.fn(() => {
+      return (req, res, next) => {
+        next();
       };
-      next();
-    },
-    allowedTo: () => (req, res, next) => next(),
+    }),
   };
 });
 
+jest.mock("../../middlewares/cache", () => ({
+  cache: () => (req, res, next) => next()
+}));
+
+
+// ------------------------------------------------------
+// MOCK REDIS
+// ------------------------------------------------------
+jest.mock("../../config/redis", () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue("OK"),
+  del: jest.fn().mockResolvedValue(1),
+}));
 // ------------------------------------------------------
 // DB SETUP
 // ------------------------------------------------------
@@ -41,6 +52,7 @@ beforeAll(async () => {
 
 afterEach(async () => {
   await mongoose.connection.db.dropDatabase();
+  jest.clearAllMocks();
 });
 
 afterAll(async () => {
@@ -77,13 +89,21 @@ const createSemester = async () => {
 };
 
 // ------------------------------------------------------
-// TEST SUITE
+// ADMIN TESTS
 // ------------------------------------------------------
 describe("Subject API (Admin)", () => {
+  const auth = require("../../services/authService");
 
-  // ------------------------------------------------------
-  // GET ALL SUBJECTS
-  // ------------------------------------------------------
+  beforeEach(() => {
+    auth.protect.mockImplementation((req, res, next) => {
+      req.user = {
+        _id: "65f123456789abcdef123456",
+        role: "admin",
+      };
+      next();
+    });
+  });
+
   it("✓ should return empty list when no subjects exist", async () => {
     const res = await request(app).get("/api/v1/subjects");
 
@@ -92,9 +112,6 @@ describe("Subject API (Admin)", () => {
     expect(res.body.data).toEqual([]);
   });
 
-  // ------------------------------------------------------
-  // CREATE SUBJECT
-  // ------------------------------------------------------
   it("✓ should create a subject successfully", async () => {
     await createDoctor();
     await createYear();
@@ -115,9 +132,6 @@ describe("Subject API (Admin)", () => {
     expect(res.body.data.name).toBe("Math");
   });
 
-  // ------------------------------------------------------
-  // GET SUBJECT BY ID
-  // ------------------------------------------------------
   it("✓ should return subject by ID", async () => {
     await createDoctor();
     await createYear();
@@ -139,13 +153,9 @@ describe("Subject API (Admin)", () => {
 
   it("✓ should return 404 if subject not found", async () => {
     const res = await request(app).get("/api/v1/subjects/65f555555555555555555555");
-
     expect(res.status).toBe(404);
   });
 
-  // ------------------------------------------------------
-  // UPDATE SUBJECT
-  // ------------------------------------------------------
   it("✓ should update subject successfully", async () => {
     await createDoctor();
     await createYear();
@@ -175,9 +185,6 @@ describe("Subject API (Admin)", () => {
     expect(res.status).toBe(404);
   });
 
-  // ------------------------------------------------------
-  // DELETE SUBJECT
-  // ------------------------------------------------------
   it("✓ should delete subject successfully", async () => {
     await createDoctor();
     await createYear();
@@ -199,7 +206,83 @@ describe("Subject API (Admin)", () => {
 
   it("✓ should return 404 when deleting non-existing subject", async () => {
     const res = await request(app).delete("/api/v1/subjects/65f777777777777777777777");
-
     expect(res.status).toBe(404);
+  });
+});
+
+// ------------------------------------------------------
+// STUDENT TESTS — getMySubjects
+// ------------------------------------------------------
+describe("Subject API (Student) — getMySubjects", () => {
+  const auth = require("../../services/authService");
+  let studentYearId;
+
+ beforeEach(() => {
+  studentYearId = new mongoose.Types.ObjectId();
+
+  auth.protect.mockImplementation((req, res, next) => {
+
+
+    req.user = {
+      _id: "65f999999999999999999999",
+      role: "student",
+      studentData: {
+        year: studentYearId,
+      },
+    };
+
+
+    next();
+  });
+});
+
+
+  it("✓ should return 400 if student yearId is missing", async () => {
+    auth.protect.mockImplementation((req, res, next) => {
+      req.user = {
+        _id: "65f999999999999999999999",
+        role: "student",
+        studentData: {},
+      };
+      next();
+    });
+
+    const res = await request(app).get("/api/v1/subjects/my-subjects");
+
+    expect(res.status).toBe(400);
+    expect(res.body.message).toContain("Student year not found");
+  });
+
+  it("✓ should return empty list if no subjects exist for student's yearId", async () => {
+    const res = await request(app).get("/api/v1/subjects/my-subjects");
+
+    expect(res.status).toBe(200);
+    expect(res.body.results).toBe(0);
+    expect(res.body.data).toEqual([]);
+  });
+
+  it("✓ should return subjects for student's yearId", async () => {
+    await Subject.create({
+      name: "Physics",
+      code: "PHY101",
+      yearId: studentYearId,
+      semesterId: new mongoose.Types.ObjectId(),
+      doctorId: new mongoose.Types.ObjectId(),
+    });
+
+    await Subject.create({
+      name: "Math",
+      code: "MATH101",
+      yearId: studentYearId,
+      semesterId: new mongoose.Types.ObjectId(),
+      doctorId: new mongoose.Types.ObjectId(),
+    });
+
+    const res = await request(app).get("/api/v1/subjects/my-subjects");
+
+    expect(res.status).toBe(200);
+    expect(res.body.results).toBe(2);
+    expect(res.body.data[0].name).toBeDefined();
+    expect(res.body.data[1].name).toBeDefined();
   });
 });

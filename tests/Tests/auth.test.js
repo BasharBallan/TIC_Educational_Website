@@ -7,6 +7,13 @@ jest.mock("../../utils/sendEmail", () => {
   return jest.fn().mockResolvedValue(true);
 });
 
+// ------------------------------------------------------
+// NETWORK MOCKS
+// ------------------------------------------------------
+jest.mock("../../utils/network", () => ({
+  getRealIp: jest.fn(() => "127.0.0.1"),
+  getGeoLocation: jest.fn(() => ({ country: "Syria" })),
+}));
 
 require("dotenv").config({ path: "config.env.test" });
 
@@ -14,12 +21,40 @@ const request = require("supertest");
 const mongoose = require("mongoose");
 const app = require("../../app");
 
+// ------------------------------------------------------
+// USER SESSION MOCKS
+// ------------------------------------------------------
+const mockSessionCreate = jest.fn();
+const mockSessionFind = jest.fn();
+const mockSessionFindOne = jest.fn();
+const mockSessionDeleteOne = jest.fn();
+const mockSessionDeleteMany = jest.fn();
+
+jest.mock("../../models/userSessionModel", () => ({
+  create: (...args) => mockSessionCreate(...args),
+  find: (...args) => mockSessionFind(...args),
+  findOne: (...args) => mockSessionFindOne(...args),
+  deleteOne: (...args) => mockSessionDeleteOne(...args),
+  deleteMany: (...args) => mockSessionDeleteMany(...args),
+}));
+
+jest.mock("../../config/redis", () => ({
+  get: jest.fn().mockResolvedValue(null),
+  set: jest.fn().mockResolvedValue("OK"),
+  del: jest.fn().mockResolvedValue(1),
+  on: jest.fn(),
+  connect: jest.fn(),
+  quit: jest.fn(),
+}));
+
+
 beforeAll(async () => {
   await mongoose.connect(process.env.DB_URI);
 });
 
 afterEach(async () => {
   await mongoose.connection.db.dropDatabase();
+  jest.clearAllMocks();
 });
 
 afterAll(async () => {
@@ -132,8 +167,10 @@ describe("Auth API", () => {
   // ------------------------------------------------------
   describe("POST /auth/login", () => {
 
+    const mockCookie = jest.fn();
+    app.response.cookie = mockCookie;
+
     it("✓ should login successfully with valid credentials", async () => {
-      // Create user first
       await request(app)
         .post("/api/v1/auth/signup")
         .send({
@@ -145,6 +182,7 @@ describe("Auth API", () => {
 
       const res = await request(app)
         .post("/api/v1/auth/login")
+        .set("User-Agent", "JestTestAgent")
         .send({
           email: "login@example.com",
           password: "Valid@1234"
@@ -153,7 +191,8 @@ describe("Auth API", () => {
       expect(res.status).toBe(200);
       expect(res.body.data.email).toBe("login@example.com");
       expect(res.body.token).toBeDefined();
-    });
+      expect(mockCookie).toHaveBeenCalled();
+    }, 20000);
 
     it("✓ should fail when email is missing", async () => {
       const res = await request(app)
@@ -278,7 +317,6 @@ describe("POST /auth/adminSignup", () => {
 describe("POST /auth/adminLogin", () => {
 
   it("✓ should login admin successfully", async () => {
-    // Create admin using adminSignup
     await request(app)
       .post("/api/v1/auth/adminSignup")
       .send({
@@ -353,13 +391,13 @@ describe("POST /auth/adminLogin", () => {
   });
 
 });
+
 // ------------------------------------------------------
 // FORGOT PASSWORD TESTS
 // ------------------------------------------------------
 describe("POST /auth/forgotPassword", () => {
 
   it("✓ should send reset code when email exists", async () => {
-    // Create user
     await request(app)
       .post("/api/v1/auth/signup")
       .send({
@@ -407,6 +445,118 @@ describe("POST /auth/forgotPassword", () => {
       });
 
     expect(res.status).toBe(404);
+  });
+
+});
+
+// ======================================================================
+// SESSION TESTS (الخيار C — في نهاية الملف)
+// ======================================================================
+
+// ------------------------------------------------------
+// MOCK AUTH MIDDLEWARE FOR SESSION TESTS
+// ------------------------------------------------------
+jest.mock("../../services/authService", () => {
+  const original = jest.requireActual("../../services/authService");
+
+  return {
+    ...original,
+    protect: (req, res, next) => {
+      req.user = { _id: "123456789", role: "student" };
+      next();
+    },
+    allowedTo: () => (req, res, next) => next(),
+  };
+});
+
+// ------------------------------------------------------
+// GET MY SESSIONS
+// ------------------------------------------------------
+describe("GET /auth/sessions", () => {
+
+  it("✓ should return all active sessions", async () => {
+
+    mockSessionFind.mockReturnValue({
+      select: () => ({
+        sort: () => [
+          { _id: "1", createdAt: new Date() },
+          { _id: "2", createdAt: new Date() }
+        ]
+      })
+    });
+
+    const res = await request(app)
+      .get("/api/v1/auth/sessions")
+      .set("Authorization", "Bearer faketoken");
+
+    expect(res.status).toBe(200);
+    expect(res.body.results).toBe(2);
+  });
+
+});
+
+// ------------------------------------------------------
+// LOGOUT FROM SPECIFIC SESSION
+// ------------------------------------------------------
+describe("DELETE /auth/sessions/:sessionId", () => {
+
+  it("✓ should delete specific session", async () => {
+    mockSessionFindOne.mockResolvedValue({ _id: "abc", user: "123456789" });
+    mockSessionDeleteOne.mockResolvedValue({});
+
+    const res = await request(app)
+      .delete("/api/v1/auth/sessions/abc")
+      .set("Authorization", "Bearer faketoken");
+
+    expect(res.status).toBe(200);
+    expect(res.body.message).toContain("terminated");
+  });
+
+  it("✓ should return 404 if session not found", async () => {
+    mockSessionFindOne.mockResolvedValue(null);
+
+    const res = await request(app)
+      .delete("/api/v1/auth/sessions/unknown")
+      .set("Authorization", "Bearer faketoken");
+
+    expect(res.status).toBe(404);
+  });
+
+});
+
+// ------------------------------------------------------
+// LOGOUT FROM ALL OTHER SESSIONS
+// ------------------------------------------------------
+describe("DELETE /auth/sessions", () => {
+
+ it("✓ should delete all other sessions except current", async () => {
+
+  const jwt = require("jsonwebtoken");
+  jest.spyOn(jwt, "verify").mockReturnValue({ userId: "123456789" });
+
+  const bcrypt = require("bcryptjs");
+  jest.spyOn(bcrypt, "compare").mockResolvedValue(true);
+
+  mockSessionFind.mockResolvedValue([
+    { _id: "1", refreshTokenHash: "anyhash" },
+    { _id: "2", refreshTokenHash: "anyhash" }
+  ]);
+
+  mockSessionDeleteMany.mockResolvedValue({});
+
+  const res = await request(app)
+    .delete("/api/v1/auth/sessions")
+    .set("Cookie", ["refreshToken=faketoken"]);
+
+  expect(res.status).toBe(200);
+  expect(res.body.message).toContain("terminated");
+});
+
+  it("✓ should fail when refresh token missing", async () => {
+    const res = await request(app)
+      .delete("/api/v1/auth/sessions");
+
+    expect(res.status).toBe(401);
   });
 
 });

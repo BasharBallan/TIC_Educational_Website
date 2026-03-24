@@ -37,6 +37,8 @@ module.exports = {
   password_reset_success: { en: 'Password reset successfully.', ar: 'تمت إعادة تعيين كلمة المرور بنجاح.' },
 
   email_already_used: { en: 'email is already in use.', ar: 'البريد الإلكتروني مستخدم بالفعل.' },
+
+  logout_success:{en:'Logged out successfully.', ar: 'تم تسجيل الخروج بنجاح.'},
   // =========================
   // 👤 User
   // =========================
@@ -59,56 +61,10 @@ module.exports = {
   saved_lectures_cleared: { en: 'All saved lectures have been deleted successfully.', ar: 'تم حذف جميع المحاضرات المحفوظة بنجاح.' },
   semester_deleted: { en: 'Semester deleted successfully.', ar: 'تم حذف الفصل الدراسي بنجاح.' },
   subject_deleted:{ en: 'Subject deleted successfully.', ar: 'تم حذف المادة بنجاح.' },
-  // =========================
-  // 🏷️ Brand
-  // =========================
-  brand_created: { en: 'Brand created successfully.', ar: 'تم إنشاء الماركة بنجاح.' },
 
-  brand_updated: { en: 'Brand updated successfully.', ar: 'تم تحديث الماركة بنجاح.' },
-
-  brand_deleted: { en: 'Brand deleted successfully.', ar: 'تم حذف الماركة بنجاح.' },
-
-  brand_fetched: { en: 'Brand fetched successfully.', ar: 'تم جلب الماركة بنجاح.' },
-
-  brand_list: { en: 'Brands list fetched successfully.', ar: 'تم جلب قائمة الماركات بنجاح.' },
-
-  // =========================
-  // 📂 Category
-  // =========================
-  category_created: { en: 'Category created successfully.', ar: 'تم إنشاء التصنيف بنجاح.' },
-
-  category_updated: { en: 'Category updated successfully.', ar: 'تم تحديث التصنيف بنجاح.' },
-
-  category_deleted: { en: 'Category deleted successfully.', ar: 'تم حذف التصنيف بنجاح.' },
-
-  category_fetched: { en: 'Category fetched successfully.', ar: 'تم جلب التصنيف بنجاح.' },
-
-  category_list: { en: 'Categories list fetched successfully.', ar: 'تم جلب قائمة التصنيفات بنجاح.' },
 
  
 
- // =========================
-// 🚗 Wishlist
-// =========================
-wishlist_added: { 
-  en: 'Car added successfully to your wishlist.', 
-  ar: 'تمت إضافة السيارة إلى قائمة الرغبات بنجاح.' 
-},
-
-wishlist_removed: { 
-  en: 'Car removed successfully from your wishlist.', 
-  ar: 'تمت إزالة السيارة من قائمة الرغبات بنجاح.' 
-},
-
-wishlist_fetched: { 
-  en: 'Wishlist fetched successfully.', 
-  ar: 'تم جلب قائمة الرغبات بنجاح.' 
-},
-
-wishlist_already_exists: { 
-  en: 'This car is already in your wishlist.', 
-  ar: 'هذه السيارة موجودة بالفعل في قائمة الرغبات.' 
-},
 
   // =========================
   // ⚠️ General Errors

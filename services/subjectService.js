@@ -7,19 +7,34 @@ const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const cacheService = require("../services/cacheService");
 
+
+// ======================================================================
+// GET ALL SUBJECTS
+// ======================================================================
 // @desc    Get all subjects
 // @route   GET /api/v1/subjects
 // @access  Private/Admin
+// ======================================================================
 exports.getSubjects = factory.getAll(Subject);
 
+
+// ======================================================================
+// GET SPECIFIC SUBJECT
+// ======================================================================
 // @desc    Get specific subject by id
 // @route   GET /api/v1/subjects/:id
 // @access  Private/Admin
+// ======================================================================
 exports.getSubject = factory.getOne(Subject);
 
+
+// ======================================================================
+// CREATE SUBJECT
+// ======================================================================
 // @desc    Create new subject
 // @route   POST /api/v1/subjects
 // @access  Private/Admin
+// ======================================================================
 exports.createSubject = asyncHandler(async (req, res, next) => {
   const { name, code, description, doctorId, yearId, semesterId } = req.body;
 
@@ -71,9 +86,14 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
   });
 });
 
+
+// ======================================================================
+// UPDATE SUBJECT
+// ======================================================================
 // @desc    Update subject by id
 // @route   PUT /api/v1/subjects/:id
 // @access  Private/Admin
+// ======================================================================
 exports.updateSubject = async (req, res, next) => {
   const handler = factory.updateOne(Subject);
 
@@ -84,15 +104,75 @@ exports.updateSubject = async (req, res, next) => {
   });
 };
 
+
+// ======================================================================
+// DELETE SUBJECT
+// ======================================================================
 // @desc    Delete subject by id
 // @route   DELETE /api/v1/subjects/:id
 // @access  Private/Admin
-exports.deleteSubject = async (req, res, next) => {
-  const handler = factory.deleteOne(Subject);
+// ======================================================================
+exports.deleteSubject = asyncHandler(async (req, res, next) => {
+  const subjectId = req.params.id;
 
-  await handler(req, res, async () => {
-    await cacheService.del("subjects:all");
-    await cacheService.del(`subject:${req.params.id}`);
-    next();
+  // 1) Find subject
+  const subject = await Subject.findById(subjectId);
+  if (!subject) {
+    return next(new ApiError("Subject not found", 404));
+  }
+
+  // 2) Remove subject from its Year
+  await Year.updateOne(
+    { _id: subject.yearId },
+    { $pull: { subjects: subjectId } }
+  );
+
+  // 3) Remove subject from its Semester
+  await Semester.updateOne(
+    { _id: subject.semesterId },
+    { $pull: { subjects: subjectId } }
+  );
+
+  // 4) Delete subject
+  await Subject.findByIdAndDelete(subjectId);
+
+  // 5) Cache invalidation
+  await cacheService.del("subjects:all");
+  await cacheService.del(`subject:${subjectId}`);
+
+  // 6) Response
+  res.status(200).json({
+    status: "success",
+    message: "Subject deleted successfully",
   });
-};
+});
+
+
+// ======================================================================
+// GET SUBJECTS FOR STUDENT YEAR
+// ======================================================================
+// @desc    Get all subjects that belong to the student's academic year
+// @route   GET /api/v1/subjects/my-subjects
+// @access  Private/Student
+// ======================================================================
+exports.getMySubjects = asyncHandler(async (req, res, next) => {
+
+
+  const studentYearId = req.user.studentData?.year;
+
+  if (!studentYearId) {
+    return next(new ApiError("Student year not found", 400));
+  }
+
+
+  const subjects = await Subject.find({ yearId: studentYearId })
+    .select("name yearId");
+
+
+  res.status(200).json({
+    status: "success",
+    results: subjects.length,
+    data: subjects,
+  });
+});
+

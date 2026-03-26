@@ -1,16 +1,23 @@
 const axios = require("axios");
 
-exports.getRealIp = async (req) => {
+exports.getRealIp = (req) => {
   try {
+    // 1) If behind proxy (NGINX, Cloudflare, etc.)
     const forwarded = req.headers["x-forwarded-for"];
     if (forwarded) return forwarded.split(",")[0].trim();
 
-    const response = await axios.get("https://api.ipify.org?format=json");
-    return response.data.ip;
+    // 2) Direct connection
+    return (
+      req.connection?.remoteAddress ||
+      req.socket?.remoteAddress ||
+      req.ip ||
+      "0.0.0.0"
+    );
   } catch {
-    return "Unknown IP";
+    return "0.0.0.0";
   }
 };
+
 
 exports.getGeoLocation = async (ip) => {
   try {

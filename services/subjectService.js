@@ -38,19 +38,71 @@ exports.getSubject = factory.getOne(Subject);
 exports.createSubject = asyncHandler(async (req, res, next) => {
   const { name, code, description, doctorId, yearId, semesterId } = req.body;
 
+  // Log: attempt
+  logger.info("Create subject attempt", {
+    meta: {
+      adminId: req.user._id,
+      name,
+      code,
+      doctorId,
+      yearId,
+      semesterId,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   // Check doctor exists
   const doctor = await User.findById(doctorId);
-  if (!doctor) return next(new ApiError("Doctor not found", 404));
-  if (doctor.role !== "doctor")
+  if (!doctor) {
+    logger.warn("Create subject failed: doctor not found", {
+      meta: {
+        adminId: req.user._id,
+        doctorId,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Doctor not found", 404));
+  }
+
+  if (doctor.role !== "doctor") {
+    logger.warn("Create subject failed: assigned user is not a doctor", {
+      meta: {
+        adminId: req.user._id,
+        doctorId,
+        role: doctor.role,
+        correlationId: req.correlationId
+      }
+    });
     return next(new ApiError("Assigned user is not a doctor", 400));
+  }
 
   // Check year exists
   const year = await Year.findById(yearId);
-  if (!year) return next(new ApiError("Year not found", 404));
+  if (!year) {
+    logger.warn("Create subject failed: year not found", {
+      meta: {
+        adminId: req.user._id,
+        yearId,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Year not found", 404));
+  }
 
   // Check semester exists
   const semester = await Semester.findById(semesterId);
-  if (!semester) return next(new ApiError("Semester not found", 404));
+  if (!semester) {
+    logger.warn("Create subject failed: semester not found", {
+      meta: {
+        adminId: req.user._id,
+        semesterId,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Semester not found", 404));
+  }
 
   // Create subject
   const subject = await Subject.create({
@@ -62,9 +114,26 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
     semesterId,
   });
 
+  logger.info("Subject created successfully", {
+    meta: {
+      adminId: req.user._id,
+      subjectId: subject._id,
+      correlationId: req.correlationId
+    }
+  });
+
   // Add subject to doctor
   await User.findByIdAndUpdate(doctorId, {
     $addToSet: { "doctorData.subjects": subject._id },
+  });
+
+  logger.info("Subject added to doctor", {
+    meta: {
+      adminId: req.user._id,
+      doctorId,
+      subjectId: subject._id,
+      correlationId: req.correlationId
+    }
   });
 
   // Add subject to year
@@ -72,13 +141,38 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
     $addToSet: { subjects: subject._id },
   });
 
+  logger.info("Subject added to year", {
+    meta: {
+      adminId: req.user._id,
+      yearId,
+      subjectId: subject._id,
+      correlationId: req.correlationId
+    }
+  });
+
   // Add subject to semester
   await Semester.findByIdAndUpdate(semesterId, {
     $addToSet: { subjects: subject._id },
   });
 
+  logger.info("Subject added to semester", {
+    meta: {
+      adminId: req.user._id,
+      semesterId,
+      subjectId: subject._id,
+      correlationId: req.correlationId
+    }
+  });
+
   // Cache invalidation
   await cacheService.del("subjects:all");
+
+  logger.info("Cache invalidated: subjects:all", {
+    meta: {
+      adminId: req.user._id,
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(201).json({
     status: "success",
@@ -94,15 +188,40 @@ exports.createSubject = asyncHandler(async (req, res, next) => {
 // @route   PUT /api/v1/subjects/:id
 // @access  Private/Admin
 // ======================================================================
-exports.updateSubject = async (req, res, next) => {
+exports.updateSubject = asyncHandler(async (req, res, next) => {
+  const subjectId = req.params.id;
+
+  // Log: update attempt
+  logger.info("Update subject attempt", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      body: req.body,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   const handler = factory.updateOne(Subject);
 
   await handler(req, res, async () => {
+    // Cache invalidation
     await cacheService.del("subjects:all");
-    await cacheService.del(`subject:${req.params.id}`);
+    await cacheService.del(`subject:${subjectId}`);
+
+    logger.info("Subject updated successfully", {
+      meta: {
+        adminId: req.user._id,
+        subjectId,
+        correlationId: req.correlationId
+      }
+    });
+
     next();
   });
-};
+});
+
 
 
 // ======================================================================
@@ -115,9 +234,27 @@ exports.updateSubject = async (req, res, next) => {
 exports.deleteSubject = asyncHandler(async (req, res, next) => {
   const subjectId = req.params.id;
 
+  // Log: delete attempt
+  logger.info("Delete subject attempt", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   // 1) Find subject
   const subject = await Subject.findById(subjectId);
   if (!subject) {
+    logger.warn("Delete subject failed: subject not found", {
+      meta: {
+        adminId: req.user._id,
+        subjectId,
+        correlationId: req.correlationId
+      }
+    });
     return next(new ApiError("Subject not found", 404));
   }
 
@@ -127,26 +264,67 @@ exports.deleteSubject = asyncHandler(async (req, res, next) => {
     { $pull: { subjects: subjectId } }
   );
 
+  logger.info("Subject removed from year", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      yearId: subject.yearId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 3) Remove subject from its Semester
   await Semester.updateOne(
     { _id: subject.semesterId },
     { $pull: { subjects: subjectId } }
   );
 
+  logger.info("Subject removed from semester", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      semesterId: subject.semesterId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 4) Delete subject
   await Subject.findByIdAndDelete(subjectId);
+
+  logger.info("Subject deleted from database", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
+  });
 
   // 5) Cache invalidation
   await cacheService.del("subjects:all");
   await cacheService.del(`subject:${subjectId}`);
 
+  logger.info("Cache invalidated for subject", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 6) Response
+  logger.info("Delete subject successful", {
+    meta: {
+      adminId: req.user._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
+  });
+
   res.status(200).json({
     status: "success",
     message: "Subject deleted successfully",
   });
 });
-
 
 // ======================================================================
 // GET SUBJECTS FOR STUDENT YEAR
@@ -157,17 +335,42 @@ exports.deleteSubject = asyncHandler(async (req, res, next) => {
 // ======================================================================
 exports.getMySubjects = asyncHandler(async (req, res, next) => {
 
+  // Log: attempt
+  logger.info("Fetching subjects for student", {
+    meta: {
+      userId: req.user._id,
+      studentYear: req.user.studentData?.year,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
 
   const studentYearId = req.user.studentData?.year;
 
   if (!studentYearId) {
+    logger.warn("Fetching subjects failed: student year not found", {
+      meta: {
+        userId: req.user._id,
+        correlationId: req.correlationId
+      }
+    });
+
     return next(new ApiError("Student year not found", 400));
   }
-
 
   const subjects = await Subject.find({ yearId: studentYearId })
     .select("name yearId");
 
+  // Log: success
+  logger.info("Subjects fetched successfully", {
+    meta: {
+      userId: req.user._id,
+      studentYear: studentYearId,
+      subjectsCount: subjects.length,
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(200).json({
     status: "success",
@@ -175,4 +378,3 @@ exports.getMySubjects = asyncHandler(async (req, res, next) => {
     data: subjects,
   });
 });
-

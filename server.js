@@ -3,6 +3,7 @@ const dotenv = require('dotenv');
 // Load environment variables
 if (process.env.NODE_ENV === "test") {
   dotenv.config({ path: "config.env.test" });
+  logger.transports.forEach((t) => (t.silent = true));
 } else {
   dotenv.config({ path: "config.env" });
 }

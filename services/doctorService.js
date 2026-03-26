@@ -64,12 +64,40 @@ exports.getMyLecture = asyncHandler(async (req, res, next) => {
 exports.createMyLecture = asyncHandler(async (req, res, next) => {
   const { title, description, subjectId } = req.body;
 
+  // Log: attempt
+  logger.info("Create lecture attempt", {
+    meta: {
+      doctorId: req.user._id,
+      subjectId,
+      title,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   // 1) Ensure subject exists
   const subjectDoc = await Subject.findById(subjectId);
-  if (!subjectDoc) return next(new ApiError("Subject not found", 404));
+  if (!subjectDoc) {
+    logger.warn("Create lecture failed: subject not found", {
+      meta: {
+        doctorId: req.user._id,
+        subjectId,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Subject not found", 404));
+  }
 
   // 2) Ensure doctor teaches this subject
   if (!doctorTeachesSubject(req.user, subjectId)) {
+    logger.warn("Create lecture failed: doctor not assigned to subject", {
+      meta: {
+        doctorId: req.user._id,
+        subjectId,
+        correlationId: req.correlationId
+      }
+    });
     return next(new ApiError("You are not assigned to this subject", 403));
   }
 
@@ -80,6 +108,15 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
       url: `/uploads/lectures/${req.file.filename}`,
       type: req.file.mimetype,
     };
+
+    logger.info("Lecture file uploaded", {
+      meta: {
+        doctorId: req.user._id,
+        fileName: req.file.filename,
+        fileType: req.file.mimetype,
+        correlationId: req.correlationId
+      }
+    });
   }
 
   // 4) Create lecture
@@ -91,9 +128,27 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
     file: fileData,
   });
 
+  logger.info("Lecture created successfully", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId: lecture._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 5) Add lecture to subject
   await Subject.findByIdAndUpdate(subjectId, {
     $push: { lectures: lecture._id },
+  });
+
+  logger.info("Lecture added to subject", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId: lecture._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
   });
 
   // 6) Add lecture to doctor
@@ -101,9 +156,25 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
     $push: { "doctorData.lectures": lecture._id },
   });
 
+  logger.info("Lecture added to doctor", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId: lecture._id,
+      correlationId: req.correlationId
+    }
+  });
+
   // 7) Cache invalidation
   await cacheService.del(`lectures:doctor:${req.user._id}`);
   await cacheService.del(`lectures:subject:${subjectId}`);
+
+  logger.info("Cache invalidated for lecture lists", {
+    meta: {
+      doctorId: req.user._id,
+      subjectId,
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(201).json({
     status: "success",
@@ -158,15 +229,45 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
 // @access  Private/Doctor
 // ======================================================================
 exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
+  const lectureId = req.params.id;
+
+  // Log: delete attempt
+  logger.info("Delete lecture attempt", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   // 1) Delete lecture only if it belongs to the doctor
   const lecture = await Lecture.findOneAndDelete({
-    _id: req.params.id,
+    _id: lectureId,
     doctorId: req.user._id,
   });
 
   if (!lecture) {
+    logger.warn("Delete lecture failed: lecture not found or not owned by doctor", {
+      meta: {
+        doctorId: req.user._id,
+        lectureId,
+        correlationId: req.correlationId
+      }
+    });
+
     return next(new ApiError("Lecture not found or not yours", 404));
   }
+
+  logger.info("Lecture deleted from database", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId,
+      subjectId: lecture.subjectId,
+      correlationId: req.correlationId
+    }
+  });
 
   // 2) Remove lecture reference from subject
   await Subject.updateOne(
@@ -174,12 +275,38 @@ exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
     { $pull: { lectures: lecture._id } }
   );
 
+  logger.info("Lecture removed from subject", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId,
+      subjectId: lecture.subjectId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 3) Cache invalidation
-  await cacheService.del(`lecture:${req.params.id}`);
+  await cacheService.del(`lecture:${lectureId}`);
   await cacheService.del(`lectures:doctor:${req.user._id}`);
   await cacheService.del(`lectures:subject:${lecture.subjectId}`);
 
+  logger.info("Cache invalidated for lecture", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId,
+      subjectId: lecture.subjectId,
+      correlationId: req.correlationId
+    }
+  });
+
   // 4) Response
+  logger.info("Delete lecture successful", {
+    meta: {
+      doctorId: req.user._id,
+      lectureId,
+      correlationId: req.correlationId
+    }
+  });
+
   res.status(200).json({
     status: "success",
     message: "Lecture deleted successfully",

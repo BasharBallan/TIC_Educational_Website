@@ -11,6 +11,7 @@ const User = require("../models/userModel");
 const getMessage = require("../utils/getMessage");
 const UserSession = require("../models/userSessionModel");
 const { getRealIp, getGeoLocation } = require("../utils/network");
+const logger = require("../utils/logger");
 
 
 // ======================================================================
@@ -29,23 +30,56 @@ const createRefreshToken = (userId) =>
     expiresIn: process.env.JWT_REFRESH_EXPIRES_IN || "30d",
   });
 
-// Create a new session entry in DB for refresh token rotation
+// ======================================================================
+// CREATE SESSION (Refresh Token Rotation)
+// ======================================================================
 const createSession = async (userId, refreshToken, req) => {
-  const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
+  try {
+    logger.info("Creating new session", {
+      meta: {
+        userId,
+        device: req.headers["user-agent"],
+        ip: req.ip,
+        correlationId: req.correlationId
+      }
+    });
 
-  const expiresInMs =
-    (process.env.JWT_REFRESH_EXPIRES_IN_DAYS
-      ? Number(process.env.JWT_REFRESH_EXPIRES_IN_DAYS)
-      : 30) *
-    24 * 60 * 60 * 1000;
+    const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
 
-  await UserSession.create({
-    user: userId,
-    refreshTokenHash,
-    userAgent: req.headers["user-agent"],
-    ip: req.ip,
-    expiresAt: new Date(Date.now() + expiresInMs),
-  });
+    const expiresInMs =
+      (process.env.JWT_REFRESH_EXPIRES_IN_DAYS
+        ? Number(process.env.JWT_REFRESH_EXPIRES_IN_DAYS)
+        : 30) *
+      24 * 60 * 60 * 1000;
+
+    const session = await UserSession.create({
+      user: userId,
+      refreshTokenHash,
+      userAgent: req.headers["user-agent"],
+      ip: req.ip,
+      expiresAt: new Date(Date.now() + expiresInMs),
+    });
+
+    logger.info("Session created successfully", {
+      meta: {
+        userId,
+        sessionId: session._id,
+        correlationId: req.correlationId
+      }
+    });
+
+    return session;
+
+  } catch (err) {
+    logger.error("Session creation failed", {
+      meta: {
+        userId,
+        error: err.message,
+        correlationId: req.correlationId
+      }
+    });
+    throw err;
+  }
 };
 
 // Set refresh token cookie (HTTP-only)
@@ -69,37 +103,92 @@ const setRefreshTokenCookie = (res, refreshToken) => {
 // DEVICE ALERT SYSTEM (Detect new device/IP and send email)
 // ======================================================================
 
-const checkNewDeviceAndSendAlert = async (userId, normalizedUA, ip) => {
+const checkNewDeviceAndSendAlert = async (userId, normalizedUA, ip, req) => {
   try {
+    logger.info("Device check started", {
+      meta: {
+        userId,
+        device: normalizedUA,
+        ip,
+        correlationId: req.correlationId
+      }
+    });
+
     const existingSession = await UserSession.findOne({
       user: userId,
       userAgent: normalizedUA,
       ip,
     });
 
-    // If session already exists → no alert needed
-    if (existingSession) return;
+    if (existingSession) {
+      logger.info("Device recognized (no alert needed)", {
+        meta: {
+          userId,
+          device: normalizedUA,
+          ip,
+          correlationId: req.correlationId
+        }
+      });
+      return;
+    }
+
+    logger.warn("New device detected", {
+      meta: {
+        userId,
+        device: normalizedUA,
+        ip,
+        correlationId: req.correlationId
+      }
+    });
 
     const user = await User.findById(userId);
     if (!user) return;
 
-    // Send email alert
-    sendEmail({
-      email: user.email,
-      subject: "New Login Detected",
-      html: `
-        <h2>New Login Detected</h2>
-        <p>Hello ${user.name},</p>
-        <p>A new login to your account was detected:</p>
-        <ul>
-          <li><strong>Device:</strong> ${normalizedUA}</li>
-          <li><strong>IP:</strong> ${ip}</li>
-          <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
-        </ul>
-        <p>If this wasn't you, please reset your password immediately.</p>
-      `,
-    }).catch(() => {});
-  } catch (err) {}
+    // Send email in background
+    setImmediate(() => {
+      sendEmail({
+        email: user.email,
+        subject: "New Login Detected",
+        html: `
+          <h2>New Login Detected</h2>
+          <p>Hello ${user.name},</p>
+          <p>A new login to your account was detected:</p>
+          <ul>
+            <li><strong>Device:</strong> ${normalizedUA}</li>
+            <li><strong>IP:</strong> ${ip}</li>
+            <li><strong>Time:</strong> ${new Date().toLocaleString()}</li>
+          </ul>
+          <p>If this wasn't you, please reset your password immediately.</p>
+        `,
+      })
+        .then(() => {
+          logger.info("Device alert email sent", {
+            meta: {
+              userId,
+              email: user.email,
+              correlationId: req.correlationId
+            }
+          });
+        })
+        .catch((err) => {
+          logger.error("Device alert email failed", {
+            meta: {
+              userId,
+              error: err.message,
+              correlationId: req.correlationId
+            }
+          });
+        });
+    });
+  } catch (err) {
+    logger.error("Device check failed", {
+      meta: {
+        userId,
+        error: err.message,
+        correlationId: req.correlationId
+      }
+    });
+  }
 };
 
 
@@ -155,56 +244,66 @@ exports.signup = asyncHandler(async (req, res, next) => {
 
 
 // ======================================================================
-// AUTH: LOGIN (Students + Doctors)
+// AUTH: STUDENT LOGIN
 // ======================================================================
-
 // ------------------------------------------------------
-// @desc    Login (Students & Doctors)
+// @desc    Student Login
 // @route   POST /api/v1/auth/login
 // @access  Public
 // ------------------------------------------------------
 exports.login = asyncHandler(async (req, res, next) => {
   const { email, password } = req.body;
 
-  // Find user
+  logger.info("Login attempt", {
+    meta: {
+      email,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
+  // 1) Find user
   const user = await User.findOne({ email }).select("+password");
-  if (!user) return next(new ApiError("Incorrect email or password", 401));
+  if (!user) {
+    return next(new ApiError("Incorrect email or password", 401));
+  }
 
-  // Validate password
+  // 2) Validate password
   const isCorrectPassword = await bcrypt.compare(password, user.password);
-  if (!isCorrectPassword) return next(new ApiError("Incorrect email or password", 401));
+  if (!isCorrectPassword) {
+    return next(new ApiError("Incorrect email or password", 401));
+  }
 
-  // Create tokens
-  const accessToken = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_SECRET,
-    { expiresIn: process.env.JWT_EXPIRES_IN }
-  );
+  // 3) Create tokens
+  const accessToken = createAccessToken(user._id);
+  const refreshToken = createRefreshToken(user._id);
 
-  const refreshToken = jwt.sign(
-    { userId: user._id },
-    process.env.JWT_REFRESH_SECRET,
-    { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
-  );
+  // 4) Create fingerprint
+  const fingerprint = refreshToken.slice(0, 12);
 
-  // Device + IP detection
+  // 5) Fast IP
+  const ip =
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.connection?.remoteAddress ||
+    req.socket?.remoteAddress ||
+    req.ip ||
+    "0.0.0.0";
+
+  // 6) Device
   const rawUA = req.headers["user-agent"] || "Unknown Device";
   const normalizedUA = rawUA.slice(0, 40);
 
-  const ip = await getRealIp(req);
-  const location = await getGeoLocation(ip);
+  // 7) Hash refresh token
+  const refreshTokenHash = await bcrypt.hash(refreshToken, 8);
 
-  await checkNewDeviceAndSendAlert(user._id, normalizedUA, ip);
-
-  // Save session
-  const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
-
-  await UserSession.create({
+  // 8) Create session (blocking to ensure refresh works)
+  const newSession = await UserSession.collection.insertOne({
     user: user._id,
     refreshTokenHash,
+    fingerprint,
     userAgent: normalizedUA,
     ip,
-    location,
     lastUsedAt: new Date(),
     expiresAt: new Date(
       Date.now() +
@@ -213,7 +312,17 @@ exports.login = asyncHandler(async (req, res, next) => {
     ),
   });
 
-  // Set cookie
+  logger.info("Session created", {
+    meta: {
+      userId: user._id,
+      sessionId: newSession.insertedId,
+      ip,
+      device: normalizedUA,
+      correlationId: req.correlationId
+    }
+  });
+
+  // 9) Set cookie
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
@@ -225,6 +334,15 @@ exports.login = asyncHandler(async (req, res, next) => {
 
   user.password = undefined;
 
+  logger.info("Login successful", {
+    meta: {
+      userId: user._id,
+      ip,
+      device: normalizedUA,
+      correlationId: req.correlationId
+    }
+  });
+
   res.status(200).json({
     status: "success",
     message: "Logged in successfully.",
@@ -232,6 +350,8 @@ exports.login = asyncHandler(async (req, res, next) => {
     token: accessToken,
   });
 });
+
+
 
 
 // ======================================================================
@@ -320,7 +440,8 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
     ),
   });
 
-  await checkNewDeviceAndSendAlert(admin._id, req);
+await checkNewDeviceAndSendAlert(admin._id, normalizedUA, ip, req);
+
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -345,7 +466,6 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
 // ======================================================================
 // MIDDLEWARE: PROTECT ROUTES
 // ======================================================================
-
 // ------------------------------------------------------
 // @desc    Protect routes (JWT Authentication)
 // @access  Private
@@ -358,16 +478,53 @@ exports.protect = asyncHandler(async (req, res, next) => {
     token = req.headers.authorization.split(" ")[1];
   }
 
+  // Log: access attempt
+  logger.info("Protect: access attempt", {
+    meta: {
+      hasToken: !!token,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   if (!token) {
+    logger.warn("Protect failed: no token provided", {
+      meta: { correlationId: req.correlationId }
+    });
     return next(new ApiError(getMessage("not_logged_in", req.lang), 401));
   }
 
-  // Verify token
-  const decoded = jwt.verify(token, process.env.JWT_SECRET);
+  let decoded;
+  try {
+    decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    logger.info("Protect: token verified", {
+      meta: {
+        userId: decoded.userId,
+        correlationId: req.correlationId
+      }
+    });
+
+  } catch (err) {
+    logger.warn("Protect failed: invalid token", {
+      meta: {
+        error: err.message,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError(getMessage("invalid_credentials", req.lang), 401));
+  }
 
   // Check if user still exists
   const currentUser = await User.findById(decoded.userId);
   if (!currentUser) {
+    logger.warn("Protect failed: user no longer exists", {
+      meta: {
+        userId: decoded.userId,
+        correlationId: req.correlationId
+      }
+    });
     return next(new ApiError(getMessage("user_not_exist", req.lang), 401));
   }
 
@@ -377,10 +534,26 @@ exports.protect = asyncHandler(async (req, res, next) => {
       currentUser.passwordChangedAt.getTime() / 1000,
       10
     );
+
     if (passChangedTimestamp > decoded.iat) {
+      logger.warn("Protect failed: password changed after token issued", {
+        meta: {
+          userId: currentUser._id,
+          correlationId: req.correlationId
+        }
+      });
       return next(new ApiError(getMessage("password_changed", req.lang), 401));
     }
   }
+
+  // Log: access granted
+  logger.info("Protect: access granted", {
+    meta: {
+      userId: currentUser._id,
+      role: currentUser.role,
+      correlationId: req.correlationId
+    }
+  });
 
   req.user = currentUser;
   next();
@@ -388,70 +561,118 @@ exports.protect = asyncHandler(async (req, res, next) => {
 
 
 // ======================================================================
-// MIDDLEWARE: ROLE-BASED AUTHORIZATION
-// ======================================================================
-
-// ------------------------------------------------------
-// @desc    Role-based Authorization
-// @access  Private (depends on allowed roles)
-// ------------------------------------------------------
-exports.allowedTo = (...roles) =>
-  asyncHandler(async (req, res, next) => {
-    if (!roles.includes(req.user.role)) {
-      return next(new ApiError(getMessage("unauthorized", req.lang), 403));
-    }
-    next();
-  });
-
-
-// ======================================================================
 // REFRESH TOKEN (ROTATION)
 // ======================================================================
-
 // ------------------------------------------------------
 // @desc    Refresh Access Token (Token Rotation)
 // @route   POST /api/v1/auth/refresh
 // @access  Public
 // ------------------------------------------------------
 exports.refreshToken = asyncHandler(async (req, res, next) => {
-  const oldRefreshToken = req.cookies && req.cookies.refreshToken;
+  const oldRefreshToken = req.cookies?.refreshToken;
+
+  logger.info("Refresh token attempt", {
+    meta: {
+      hasToken: !!oldRefreshToken,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
 
   if (!oldRefreshToken) {
     return next(new ApiError(getMessage("not_logged_in", req.lang), 401));
   }
 
+  // 1) Verify refresh token
   let payload;
   try {
     payload = jwt.verify(oldRefreshToken, process.env.JWT_REFRESH_SECRET);
+
+    logger.info("Refresh: refresh token verified", {
+      meta: {
+        userId: payload.userId,
+        correlationId: req.correlationId
+      }
+    });
+
   } catch (err) {
     return next(new ApiError(getMessage("invalid_credentials", req.lang), 401));
   }
 
-  const sessions = await UserSession.find({ user: payload.userId });
+  // 2) Extract fingerprint
+  const fingerprint = oldRefreshToken.slice(0, 12);
 
-  let currentSession = null;
-  for (const session of sessions) {
-    const isMatch = await bcrypt.compare(
-      oldRefreshToken,
-      session.refreshTokenHash
-    );
-    if (isMatch) {
-      currentSession = session;
-      break;
-    }
-  }
+  // 3) Find session by fingerprint
+  const session = await UserSession.findOne({
+    user: payload.userId,
+    fingerprint
+  });
 
-  if (!currentSession) {
+  if (!session) {
+    logger.warn("Refresh failed: session not found (token misuse)", {
+      meta: {
+        userId: payload.userId,
+        correlationId: req.correlationId
+      }
+    });
     return next(new ApiError(getMessage("not_logged_in", req.lang), 401));
   }
 
-  await UserSession.deleteOne({ _id: currentSession._id });
+  // 4) Compare refresh token
+  const isMatch = await bcrypt.compare(oldRefreshToken, session.refreshTokenHash);
+  if (!isMatch) {
+    return next(new ApiError(getMessage("not_logged_in", req.lang), 401));
+  }
 
+  // 5) Delete old session
+  await UserSession.deleteOne({ _id: session._id });
+
+  logger.info("Refresh: old session deleted", {
+    meta: {
+      userId: payload.userId,
+      sessionId: session._id,
+      correlationId: req.correlationId
+    }
+  });
+
+  // 6) Create new tokens
   const newAccessToken = createAccessToken(payload.userId);
   const newRefreshToken = createRefreshToken(payload.userId);
+  const newFingerprint = newRefreshToken.slice(0, 12);
 
-  await createSession(payload.userId, newRefreshToken, req);
+  // 7) Create new session
+  const newSession = await UserSession.collection.insertOne({
+    user: payload.userId,
+    refreshTokenHash: await bcrypt.hash(newRefreshToken, 8),
+    fingerprint: newFingerprint,
+    userAgent: req.headers["user-agent"]?.slice(0, 40),
+    ip: req.ip,
+    lastUsedAt: new Date(),
+    expiresAt: new Date(
+      Date.now() +
+        parseInt(process.env.JWT_REFRESH_EXPIRES_IN_DAYS || "30") *
+          24 * 60 * 60 * 1000
+    ),
+  });
+
+  logger.info("Refresh: new session created", {
+    meta: {
+      userId: payload.userId,
+      sessionId: newSession.insertedId,
+      correlationId: req.correlationId
+    }
+  });
+
+  // 8) Set new cookie
   setRefreshTokenCookie(res, newRefreshToken);
+
+  logger.info("Refresh token successful", {
+    meta: {
+      userId: payload.userId,
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(200).json({
     status: "success",
@@ -461,9 +682,49 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
 
 
 // ======================================================================
+// MIDDLEWARE: ROLE-BASED AUTHORIZATION
+// ======================================================================
+exports.allowedTo = (...roles) =>
+  asyncHandler(async (req, res, next) => {
+
+    logger.info("Authorization check", {
+      meta: {
+        userId: req.user?._id,
+        userRole: req.user?.role,
+        allowedRoles: roles,
+        correlationId: req.correlationId
+      }
+    });
+
+    if (!roles.includes(req.user.role)) {
+      logger.warn("Authorization failed: insufficient permissions", {
+        meta: {
+          userId: req.user._id,
+          userRole: req.user.role,
+          requiredRoles: roles,
+          correlationId: req.correlationId
+        }
+      });
+
+      return next(new ApiError(getMessage("unauthorized", req.lang), 403));
+    }
+
+    logger.info("Authorization success", {
+      meta: {
+        userId: req.user._id,
+        role: req.user.role,
+        correlationId: req.correlationId
+      }
+    });
+
+    next();
+  });
+
+
+
+// ======================================================================
 // LOGOUT (ALL SESSIONS)
 // ======================================================================
-
 // ------------------------------------------------------
 // @desc    Logout (invalidate all sessions for user)
 // @route   POST /api/v1/auth/logout
@@ -472,23 +733,77 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
 exports.logout = asyncHandler(async (req, res, next) => {
   const refreshToken = req.cookies && req.cookies.refreshToken;
 
+  // Log: logout attempt
+  logger.info("Logout attempt", {
+    meta: {
+      hasToken: !!refreshToken,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   if (refreshToken) {
     try {
       const payload = jwt.verify(
         refreshToken,
         process.env.JWT_REFRESH_SECRET
       );
-      await UserSession.deleteMany({ user: payload.userId });
-    } catch (err) {}
+
+      // Log: token verified
+      logger.info("Logout: refresh token verified", {
+        meta: {
+          userId: payload.userId,
+          correlationId: req.correlationId
+        }
+      });
+
+      // Delete all sessions for this user
+      const deleted = await UserSession.deleteMany({ user: payload.userId });
+
+      // Log: sessions deleted
+      logger.info("Logout: all sessions invalidated", {
+        meta: {
+          userId: payload.userId,
+          deletedSessions: deleted.deletedCount,
+          correlationId: req.correlationId
+        }
+      });
+
+    } catch (err) {
+      // Log: invalid token
+      logger.warn("Logout: invalid refresh token", {
+        meta: {
+          error: err.message,
+          correlationId: req.correlationId
+        }
+      });
+    }
+  } else {
+    // Log: no token found
+    logger.warn("Logout attempt without refresh token", {
+      meta: {
+        correlationId: req.correlationId
+      }
+    });
   }
 
+  // Clear cookie
   res.clearCookie("refreshToken");
+
+  // Log: logout success
+  logger.info("Logout successful", {
+    meta: {
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(200).json({
     status: "success",
     message: getMessage("logout_success", req.lang) || "Logged out successfully",
   });
 });
+
 
 
 // ======================================================================
@@ -659,6 +974,17 @@ exports.getMySessions = asyncHandler(async (req, res, next) => {
 exports.logoutFromSession = asyncHandler(async (req, res, next) => {
   const sessionId = req.params.sessionId;
 
+  // Log: attempt to delete specific session
+  logger.info("Session delete attempt", {
+    meta: {
+      userId: req.user._id,
+      sessionId,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   // Ensure session belongs to current user
   const session = await UserSession.findOne({
     _id: sessionId,
@@ -666,11 +992,28 @@ exports.logoutFromSession = asyncHandler(async (req, res, next) => {
   });
 
   if (!session) {
+    logger.warn("Session delete failed: session not found or not owned by user", {
+      meta: {
+        userId: req.user._id,
+        sessionId,
+        correlationId: req.correlationId
+      }
+    });
+
     return next(new ApiError("Session not found", 404));
   }
 
   // Delete session
   await UserSession.deleteOne({ _id: sessionId });
+
+  // Log: session deleted
+  logger.info("Session deleted successfully", {
+    meta: {
+      userId: req.user._id,
+      sessionId,
+      correlationId: req.correlationId
+    }
+  });
 
   res.status(200).json({
     status: "success",
@@ -678,12 +1021,9 @@ exports.logoutFromSession = asyncHandler(async (req, res, next) => {
   });
 });
 
-
 // ======================================================================
 // LOGOUT FROM ALL OTHER SESSIONS
 // ======================================================================
-
-// ------------------------------------------------------
 // @desc    Logout from all sessions except current
 // @route   DELETE /api/v1/auth/sessions
 // @access  Private
@@ -691,36 +1031,84 @@ exports.logoutFromSession = asyncHandler(async (req, res, next) => {
 exports.logoutFromOtherSessions = asyncHandler(async (req, res, next) => {
   const refreshToken = req.cookies.refreshToken;
 
+  // Log: attempt
+  logger.info("Logout from other sessions attempt", {
+    meta: {
+      userId: req.user._id,
+      hasToken: !!refreshToken,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId
+    }
+  });
+
   if (!refreshToken) {
+    logger.warn("Logout from other sessions failed: no refresh token", {
+      meta: { correlationId: req.correlationId }
+    });
     return next(new ApiError("Not logged in", 401));
   }
 
-  // Verify refresh token
-  const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  let payload;
+  try {
+    payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
 
-  // Fetch all sessions for this user
+    logger.info("Logout from other sessions: refresh token verified", {
+      meta: {
+        userId: payload.userId,
+        correlationId: req.correlationId
+      }
+    });
+
+  } catch (err) {
+    logger.warn("Logout from other sessions failed: invalid refresh token", {
+      meta: {
+        error: err.message,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Invalid credentials", 401));
+  }
+
+  // Find current session
   const sessions = await UserSession.find({ user: payload.userId });
 
   let currentSession = null;
-
-  // Identify current session by comparing hashed refresh token
   for (const session of sessions) {
-    const match = await bcrypt.compare(refreshToken, session.refreshTokenHash);
-    if (match) currentSession = session;
+    const isMatch = await bcrypt.compare(refreshToken, session.refreshTokenHash);
+    if (isMatch) {
+      currentSession = session;
+      break;
+    }
   }
 
   if (!currentSession) {
-    return next(new ApiError("Session not found", 404));
+    logger.warn("Logout from other sessions failed: current session not found", {
+      meta: {
+        userId: payload.userId,
+        correlationId: req.correlationId
+      }
+    });
+    return next(new ApiError("Not logged in", 401));
   }
 
-  // Delete all sessions except the current one
-  await UserSession.deleteMany({
+  // Delete all other sessions
+  const deleted = await UserSession.deleteMany({
     user: payload.userId,
-    _id: { $ne: currentSession._id },
+    _id: { $ne: currentSession._id }
+  });
+
+  logger.info("Other sessions deleted", {
+    meta: {
+      userId: payload.userId,
+      currentSessionId: currentSession._id,
+      deletedSessions: deleted.deletedCount,
+      correlationId: req.correlationId
+    }
   });
 
   res.status(200).json({
     status: "success",
-    message: "All other sessions terminated",
+    message: "All other sessions terminated successfully",
   });
 });

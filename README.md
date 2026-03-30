@@ -1,168 +1,238 @@
-# 🎓 TIC Educational Website
+# 🎓 TIC Academy – Enterprise Backend Platform
 
-A robust and feature-rich educational platform built with Node.js and Express, designed to provide an engaging learning experience with secure authentication, content management, and e-commerce capabilities.
+A powerful, production‑grade backend system built with **Node.js**, **Express**, **MongoDB**, **Redis**, and a fully modular architecture.  
+This platform powers an educational system with **secure authentication**, **session management**, **device tracking**, **academic content management**, and **role‑based access control**.
 
 ![Version](https://img.shields.io/badge/version-1.0.0-blue)
-![License](https://img.shields.io/badge/license/None-red)
-![Stars](https://img.shields.io/github/stars/BasharBallan/TIC_Educational_Website?style=social)
-![Forks](https://img.shields.io/github/forks/BasharBallan/TIC_Educational_Website?style=social)
+![Status](https://img.shields.io/badge/status-production-green)
+![Tests](https://img.shields.io/badge/tests-passing-brightgreen)
+![License](https://img.shields.io/badge/license-Private-red)
 
+
+---
 
 ## ✨ Features
 
-*   🔐 **Secure User Authentication & Authorization:** Implement robust user management with JWT-based authentication and role-based authorization using `bcryptjs` and `jsonwebtoken`.
-*   📚 **Dynamic Content Management:** Easily create, update, and manage educational courses and materials with `mongoose` for data persistence.
-*   📧 **Automated Email Notifications:** Send transactional emails, password resets, and course updates using `nodemailer`.
-*   🖼️ **Image Upload & Optimization:** Efficiently manage and optimize course images and user avatars with `multer` and `sharp`.
-*   🌐 **API Documentation with Swagger:** Explore and interact with the API endpoints through interactive `Swagger` documentation.
+### 🔐 **Enterprise Authentication & Security**
+- JWT Access Tokens  
+- Refresh Token Rotation  
+- Multi‑session login  
+- Device & IP tracking  
+- Login alerts via email  
+- Password reset (verification code)  
+- Admin login & signup  
+- HTTP‑only cookies  
+- Strong password validation  
+- Helmet, HPP, Rate Limiting, CORS  
+
+### 🧩 **Academic Management System**
+- Years  
+- Semesters  
+- Subjects  
+- Lectures  
+- Saved lectures  
+- Doctor lecture management  
+- Student lecture access  
+- File uploads for lecture materials  
+
+### ⚙ **Infrastructure & Performance**
+- Redis caching layer  
+- Cache invalidation strategy  
+- Winston logging with daily rotation  
+- Correlation ID per request  
+- Health check endpoint  
+- Swagger API documentation  
+- Clean modular architecture  
+
+### 🧪 **Testing Suite**
+- Jest + Supertest  
+- Mocked Redis  
+- Mocked Email  
+- Mocked Auth  
+- Mocked Network  
+- Full CRUD tests for:
+  - Auth  
+  - Sessions  
+  - Users  
+  - Doctors  
+  - Subjects  
+  - Semesters  
+  - Years  
+  - Saved lectures  
+  - Lectures  
+
+---
 
 ## 🚀 Installation Guide
 
-Follow these steps to get your development environment set up and running.
+### **Prerequisites**
+Make sure you have:
 
-### Prerequisites
+- Node.js (v20+ recommended)  
+- npm or Yarn  
+- MongoDB (local or Atlas)  
+- Redis (local or cloud)
 
-Ensure you have the following installed:
+---
 
-*   Node.js (LTS version recommended)
-*   npm (comes with Node.js) or Yarn
-*   MongoDB (local or cloud instance like MongoDB Atlas)
-
-### 1. Clone the Repository
+### **1. Clone the Repository**
 
 ```bash
-git clone https://github.com/BasharBallan/TIC_Educational_Website.git
-cd TIC_Educational_Website
+git clone <repo-url>
+cd TIC_Academy_Backend
+
 ```
 
-### 2. Install Dependencies
-
-Using npm:
+### **2. Install Dependencies**
 
 ```bash
 npm install
 ```
 
-Or using Yarn:
+### **3. Environment Configuration**
 
-```bash
-yarn install
-```
-
-### 3. Environment Configuration
-
-Create a `.env` file in the root directory of the project based on the `config/config.env` example. This file will store your sensitive environment variables.
+Create a `.env` file in the root directory and fill it with your environment variables:
 
 ```env
+PORT=8000
 NODE_ENV=development
-PORT=5000
-MONGO_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-JWT_EXPIRE=30d
-JWT_COOKIE_EXPIRE=30
-EMAIL_HOST=smtp.mailtrap.io
-EMAIL_PORT=2525
-EMAIL_USERNAME=your_mailtrap_username
-EMAIL_PASSWORD=your_mailtrap_password
-BASE_URL=http://localhost:5000
+
+DB_URI=your_mongodb_connection_string
+
+JWT_SECRET=your_access_token_secret
+JWT_EXPIRES_IN=30m
+
+JWT_REFRESH_SECRET=your_refresh_token_secret
+JWT_REFRESH_EXPIRES_IN=30d
+JWT_REFRESH_EXPIRES_IN_DAYS=30
+
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=465
+EMAIL_USER=your_email
+EMAIL_PASSWORD=your_email_password
+
+PRIVATE_KEY=uuid_value
+```
+### **4. Start the Server**
+
+#### **Development Mode**
+```bash
+npm run start:dev
+```
+#### **Production Mode**
+``` bash 
+npm run start
+```
+#### **Test Mode**
+```bash
+npm test
 ```
 
-**Note:** Replace placeholder values with your actual credentials and settings.
+## 📘 API Documentation
 
-### 4. Start the Server
-
-Once dependencies are installed and `.env` is configured, you can start the development server:
+Swagger UI is available at:
 
 ```bash
-npm run dev
+http://localhost:8000/api-docs
 ```
 
-The server will typically run on `http://localhost:5000` (or your specified `PORT`).
+This includes full documentation for:
+
+- Authentication  
+- Users  
+- Doctors  
+- Subjects  
+- Semesters  
+- Years  
+- Lectures  
+- Saved Lectures  
+- Sessions  
+
+---
 
 ## 💡 Usage Examples
 
-### Accessing the API
-
-The API will be available at your configured `BASE_URL`. For example, if running locally:
-
-```
-http://localhost:5000/api/v1/users
-```
-
-### API Documentation
-
-Explore all available API endpoints and their functionalities using Swagger UI:
-
-```
-http://localhost:5000/api-docs
-```
-
-### Example: Registering a New User
-
-You can use a tool like Postman or Insomnia to send a POST request to the registration endpoint.
-
-**Request URL:** `POST http://localhost:5000/api/v1/auth/signup`
-
-**Request Body (JSON):**
+### **Register a New User**
+**POST** `/api/v1/auth/signup`
 
 ```json
 {
   "name": "John Doe",
-  "email": "john.doe@example.com",
-  "password": "securepassword123",
-  "role": "user"
+  "email": "john@example.com",
+  "password": "StrongPass@123!",
+  "passwordConfirm": "StrongPass@123!"
 }
 ```
+### **Fetch All Subjects**
+**GET** `/api/v1/subjects`
 
-### Example: Fetching Subjects
+Supports filtering, sorting, and pagination.
 
-**Request URL:** `GET http://localhost:5000/api/v1/subjects`
+---
 
-This will return a list of all Subjects. You can add query parameters for filtering, sorting, and pagination.
+### **Refresh Access Token**
+**POST** `/api/v1/auth/refresh`
+
+Automatically rotates refresh tokens and creates a new session.
+
+---
 
 ## 🗺️ Project Roadmap
 
-The TIC Educational Website is continuously evolving. Here's a glimpse of what's planned:
+### **V1.1 – Instructor Dashboard**
+- Manage lectures  
+- View student progress  
+- Analytics  
 
-*   **V1.1 - Instructor Dashboard:** Develop a dedicated dashboard for instructors to manage their courses, view student progress, and communicate.
-*   **V1.2 - Interactive Quizzes & Assessments:** Integrate interactive quizzes, assignments, and progress tracking for students.
-*   **V1.3 - Real-time Chat/Forum:** Implement a communication feature for students and instructors within courses.
-*   **V1.4 - Advanced Search & Filtering:** Enhance search capabilities with more refined filters and categories for courses.
-*   **V1.5 - Multi-language Support Expansion:** Expand `i18n` to cover all user-facing content and administrative interfaces.
+### **V1.2 – Interactive Quizzes**
+- MCQ quizzes  
+- Auto‑grading  
+- Student progress tracking  
+
+### **V1.3 – Real‑time Communication**
+- Chat  
+- Forums  
+- Notifications  
+
+### **V1.4 – Advanced Search**
+- Full‑text search  
+- Smart filters  
+- Recommendations  
+
+### **V1.5 – Multi‑Language Expansion**
+- Full i18n support  
+- Admin panel localization  
+---
 
 ## 🤝 Contribution Guidelines
 
-We welcome contributions to the TIC Educational Website! To ensure a smooth collaboration, please follow these guidelines:
+We welcome contributions! Please follow these rules:
 
-### Code Style
+### **Code Style**
+- Follow the ESLint rules (`.eslintrc.json`)
+- Use consistent naming and formatting
 
-*   Adhere to the ESLint configuration (`.eslintrc.json`) provided in the project.
-*   Use consistent formatting and naming conventions.
+### **Branch Naming**
+- `feature/add-lecture-upload`
+- `bugfix/fix-refresh-token`
+- `refactor/improve-logging`
 
-### Branch Naming Conventions
+### **Pull Requests**
+1. Fork the repo  
+2. Create a feature branch  
+3. Write clear and descriptive commit messages  
+4. Ensure all tests pass before submitting  
+5. Provide a detailed explanation of your changes in the PR description  
 
-*   Use descriptive branch names, typically following a `feature/`, `bugfix/`, or `refactor/` prefix.
-    *   Example: `feature/add-instructor-dashboard`, `bugfix/fix-payment-issue`, `refactor/improve-auth-middleware`
-
-### Pull Request Process
-
-1.  Fork the repository and create your branch from `main`.
-2.  Ensure your code adheres to the project's code style.
-3.  Write clear, concise commit messages.
-4.  Before submitting a Pull Request (PR), ensure all tests pass.
-5.  Provide a detailed description of your changes in the PR, explaining what problem it solves and how it was implemented.
-6.  Link any relevant issues in your PR description.
-
-### Testing Requirements
-
-*   All new features should be accompanied by appropriate unit and/or integration tests.
-*   Ensure existing tests pass before submitting a PR.
-*   Strive for good test coverage for your changes.
-
-## 📄 License Information
-
-This project is currently **unlicensed**. This means that by default, all rights are reserved by the copyright holder(s) (BasharBallan). Users are not permitted to distribute, modify, or use the code for commercial purposes without explicit permission.
-
-For inquiries regarding licensing or usage, please contact the main contributor.
+### **Testing Requirements**
+- All new features must include appropriate tests  
+- All existing tests must pass before merging  
 
 ---
+
+## 📄 License
+
+This project is currently **unlicensed**.  
+All rights are reserved by the author **(BasharBallan)**.  
+Usage, distribution, or modification of this project requires explicit permission.
+

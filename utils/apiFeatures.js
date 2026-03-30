@@ -15,7 +15,6 @@ filter() {
 
   let filterQuery = JSON.parse(queryStr);
 
-  // إذا في keyword → نضيف فلترة بالـ regex
   if (this.queryString.keyword) {
     const keyword = this.queryString.keyword;
     filterQuery.$or = [

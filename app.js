@@ -11,6 +11,7 @@ const langMiddleware = require('./middlewares/langMiddleware');
 const mountRoutes = require('./routes');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
+const helmet = require("helmet");
 
 // Winston Logging Middlewares
 const correlationId = require("./middlewares/correlationId");
@@ -25,6 +26,13 @@ app.options('*', cors());
 
 // Compress responses
 app.use(compression());
+
+// helmet Security
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
 
 // Body parser
 app.use(express.json({ limit: '20kb' }));

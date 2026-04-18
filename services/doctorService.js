@@ -4,6 +4,7 @@ const User = require("../models/userModel");
 const Subject = require("../models/subjectModel");
 const ApiError = require("../utils/apiError");
 const cacheService = require("../services/cacheService");
+const logger = require("../utils/logger");
 
 // ======================================================================
 // HELPER: Check if doctor teaches a specific subject

@@ -1,2 +1,0 @@
-{"timestamp":"2026-03-27T13:10:26.537Z","level":"info","message":"HTTP Request","meta":{"method":"GET","url":"/api/v1/health","status":200,"duration":"18ms","ip":"::1","device":"PostmanRuntime/7.52.0","correlationId":"d5d637db-cdbb-4e6d-8d1a-472345fc4256"}}
-{"timestamp":"2026-03-27T13:21:51.220Z","level":"info","message":"HTTP Request","meta":{"method":"GET","url":"/api/v1/health","status":200,"duration":"14ms","ip":"::1","device":"PostmanRuntime/7.52.0","correlationId":"d7a052c8-4c25-45f8-918e-23f341ac9ec6"}}

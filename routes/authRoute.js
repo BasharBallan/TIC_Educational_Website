@@ -1,4 +1,5 @@
 const express = require("express");
+const router = express.Router();
 
 const {
   signupValidator,
@@ -22,9 +23,11 @@ const {
   getMySessions,
   logoutFromSession,
   logoutFromOtherSessions,
+  googleCallbackService,
+  googleUnlinkService,
+  googleInitService,
+  setPasswordService,
 } = require("../services/authService");
-
-const router = express.Router();
 
 /**
  * @swagger
@@ -364,5 +367,95 @@ router.delete("/sessions/:sessionId", protect, logoutFromSession);
  *         description: Unauthorized
  */
 router.delete("/sessions", protect, logoutFromOtherSessions);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/init:
+ *   get:
+ *     summary: Initialize Google OAuth (PKCE + State)
+ *     tags: [Auth]
+ *     description: Generates PKCE parameters (code_verifier, code_challenge) and a secure state token, stores them temporarily, and returns a Google OAuth URL for redirection.
+ *     responses:
+ *       200:
+ *         description: Google OAuth URL generated successfully
+ */
+router.get("/google/init", googleInitService);
+
+/**
+ * @swagger
+ * /api/v1/auth/google/callback:
+ *   get:
+ *     summary: Google OAuth Callback (PKCE Verification)
+ *     tags: [Auth]
+ *     description: Handles Google OAuth callback, verifies PKCE + state, exchanges authorization code for tokens, and logs the user in.
+ *     parameters:
+ *       - in: query
+ *         name: code
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Authorization code returned from Google
+ *       - in: query
+ *         name: state
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: State token returned from Google
+ *     responses:
+ *       302:
+ *         description: Redirects to frontend with access token
+ *       400:
+ *         description: Invalid or expired OAuth parameters
+ */
+router.get("/google/callback", googleCallbackService);
+
+/**
+ * @swagger
+ * /api/v1/auth/unlink/google:
+ *   delete:
+ *     summary: Unlink Google Account
+ *     tags: [Auth]
+ *     description: Disconnects Google login from the authenticated user. Requires that the user has manually set a password.
+ *     responses:
+ *       200:
+ *         description: Google account unlinked successfully
+ *       400:
+ *         description: Google not linked or password not manually set
+ *       401:
+ *         description: Unauthorized
+ */
+router.delete("/unlink/google", protect, googleUnlinkService);
+
+/* =====================================================================
+   SET PASSWORD (GOOGLE USERS)
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/set-password:
+ *   post:
+ *     summary: Set password for Google-authenticated users
+ *     tags: [Auth]
+ *     description: Allows users who signed up with Google to manually set a password before unlinking Google.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - password
+ *             properties:
+ *               password:
+ *                 type: string
+ *                 example: "Pass123@456"
+ *     responses:
+ *       200:
+ *         description: Password set successfully
+ *       400:
+ *         description: Invalid password or user already has a password
+ *       401:
+ *         description: Unauthorized
+ */
+router.post("/set-password", protect, setPasswordService);
 
 module.exports = router;

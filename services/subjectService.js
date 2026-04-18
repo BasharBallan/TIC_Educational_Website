@@ -6,6 +6,7 @@ const Semester = require("../models/semesterModel");
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const cacheService = require("../services/cacheService");
+const logger = require("../utils/logger");
 
 
 // ======================================================================

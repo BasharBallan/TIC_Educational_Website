@@ -1,15 +1,21 @@
+
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
 
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const sendEmail = require("../utils/sendEmail");
+
 const createToken = require("../utils/createToken");
 const User = require("../models/userModel");
+const OAuthTemp = require("../models/oauthTempModel");
+
 const getMessage = require("../utils/getMessage");
 const UserSession = require("../models/userSessionModel");
+
 const { getRealIp, getGeoLocation } = require("../utils/network");
 const logger = require("../utils/logger");
 
@@ -33,11 +39,11 @@ const createRefreshToken = (userId) =>
 // ======================================================================
 // CREATE SESSION (Refresh Token Rotation)
 // ======================================================================
-const createSession = async (userId, refreshToken, req) => {
+module.exports.createSession = async (userId, refreshToken, req) => {
   try {
     logger.info("Creating new session", {
       meta: {
-        userId,
+        userId, 
         device: req.headers["user-agent"],
         ip: req.ip,
         correlationId: req.correlationId
@@ -53,7 +59,7 @@ const createSession = async (userId, refreshToken, req) => {
       24 * 60 * 60 * 1000;
 
     const session = await UserSession.create({
-      user: userId,
+      user: userId, 
       refreshTokenHash,
       userAgent: req.headers["user-agent"],
       ip: req.ip,
@@ -83,7 +89,7 @@ const createSession = async (userId, refreshToken, req) => {
 };
 
 // Set refresh token cookie (HTTP-only)
-const setRefreshTokenCookie = (res, refreshToken) => {
+module.exports.setRefreshTokenCookie = (res, refreshToken) => {
   const maxAgeMs =
     (process.env.JWT_REFRESH_EXPIRES_IN_DAYS
       ? Number(process.env.JWT_REFRESH_EXPIRES_IN_DAYS)
@@ -103,7 +109,8 @@ const setRefreshTokenCookie = (res, refreshToken) => {
 // DEVICE ALERT SYSTEM (Detect new device/IP and send email)
 // ======================================================================
 
-const checkNewDeviceAndSendAlert = async (userId, normalizedUA, ip, req) => {
+exports.checkNewDeviceAndSendAlert = async (userId, normalizedUA, ip, req) => {
+
   try {
     logger.info("Device check started", {
       meta: {
@@ -229,8 +236,9 @@ exports.signup = asyncHandler(async (req, res, next) => {
   // Generate tokens + session
   const accessToken = createAccessToken(student._id);
   const refreshToken = createRefreshToken(student._id);
-  await createSession(student._id, refreshToken, req);
-  setRefreshTokenCookie(res, refreshToken);
+  await exports.createSession(student._id, refreshToken, req);
+
+  exports.setRefreshTokenCookie(res, refreshToken);
 
   student.password = undefined;
 
@@ -298,7 +306,8 @@ exports.login = asyncHandler(async (req, res, next) => {
   const refreshTokenHash = await bcrypt.hash(refreshToken, 8);
 
   // 8) Create session (blocking to ensure refresh works)
-  const newSession = await UserSession.collection.insertOne({
+const newSession = await UserSession.create({
+
     user: user._id,
     refreshTokenHash,
     fingerprint,
@@ -373,8 +382,9 @@ exports.AdminSignup = asyncHandler(async (req, res, next) => {
 
   const accessToken = createAccessToken(adminUser._id);
   const refreshToken = createRefreshToken(adminUser._id);
-  await createSession(adminUser._id, refreshToken, req);
-  setRefreshTokenCookie(res, refreshToken);
+ await exports.createSession(adminUser._id, refreshToken, req);
+
+  exports.setRefreshTokenCookie(res, refreshToken);
 
   res.status(201).json({
     status: "success",
@@ -440,7 +450,7 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
     ),
   });
 
-await checkNewDeviceAndSendAlert(admin._id, normalizedUA, ip, req);
+await exports.checkNewDeviceAndSendAlert(admin._id, userAgent, ip, req);
 
 
   res.cookie("refreshToken", refreshToken, {
@@ -821,8 +831,15 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
     return next(new ApiError(getMessage("no_user_with_email", req.lang), 404));
   }
 
+  if (user.lastPasswordResetRequest && Date.now() - user.lastPasswordResetRequest < 60 * 1000) {
+  return next(new ApiError("Please wait before requesting another code", 429));
+  }
+
+  user.lastPasswordResetRequest = Date.now();
+
   // Generate reset code
-  const resetCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const resetCode = crypto.randomInt(100000, 999999).toString();
+
   const hashedResetCode = crypto
     .createHash("sha256")
     .update(resetCode)
@@ -874,21 +891,37 @@ exports.forgotPassword = asyncHandler(async (req, res, next) => {
 // @access  Public
 // ------------------------------------------------------
 exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
+  const { email, resetCode } = req.body;
+
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ApiError(getMessage("no_user_with_email", req.lang), 404));
+  }
+
+  // Too many attempts
+  if (user.passwordResetAttempts >= 5) {
+    return next(new ApiError("Too many attempts, try again later", 429));
+  }
+
+  // Hash the code
   const hashedResetCode = crypto
     .createHash("sha256")
-    .update(req.body.resetCode)
+    .update(resetCode)
     .digest("hex");
 
-  const user = await User.findOne({
-    passwordResetCode: hashedResetCode,
-    passwordResetExpires: { $gt: Date.now() },
-  });
-
-  if (!user) {
+  // Check code + expiration
+  if (
+    user.passwordResetCode !== hashedResetCode ||
+    user.passwordResetExpires < Date.now()
+  ) {
+    user.passwordResetAttempts += 1;
+    await user.save();
     return next(new ApiError(getMessage("reset_code_invalid", req.lang), 400));
   }
 
+  // Success
   user.passwordResetVerified = true;
+  user.passwordResetAttempts = 0; // reset attempts
   await user.save();
 
   res.status(200).json({
@@ -896,7 +929,6 @@ exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
     message: getMessage("reset_code_verified", req.lang),
   });
 });
-
 // ======================================================================
 // RESET PASSWORD
 // ======================================================================
@@ -907,8 +939,9 @@ exports.verifyPassResetCode = asyncHandler(async (req, res, next) => {
 // @access  Public
 // ------------------------------------------------------
 exports.resetPassword = asyncHandler(async (req, res, next) => {
-  // Find user by email
-  const user = await User.findOne({ email: req.body.email });
+  const { email, newPassword } = req.body;
+
+  const user = await User.findOne({ email });
   if (!user) {
     return next(new ApiError(getMessage("no_user_with_email", req.lang), 404));
   }
@@ -919,16 +952,21 @@ exports.resetPassword = asyncHandler(async (req, res, next) => {
   }
 
   // Update password
-  user.password = req.body.newPassword;
+  user.password = newPassword;
   user.passwordResetCode = undefined;
   user.passwordResetExpires = undefined;
   user.passwordResetVerified = undefined;
+  user.passwordResetAttempts = 0;
   await user.save();
 
-  // Generate new tokens + session
+  // Generate new tokens
   const accessToken = createAccessToken(user._id);
-  const refreshToken = createRefreshToken(user._id);
-  await createSession(user._id, newRefreshToken, req);
+  const newRefreshToken = createRefreshToken(user._id);
+
+  // Create new session
+  await exports.createSession(user._id, newRefreshToken, req);
+
+  // Set refresh token cookie
   setRefreshTokenCookie(res, newRefreshToken);
 
   res.status(200).json({
@@ -1111,4 +1149,384 @@ exports.logoutFromOtherSessions = asyncHandler(async (req, res, next) => {
     status: "success",
     message: "All other sessions terminated successfully",
   });
+});
+
+
+// ======================================================================
+// GOOGLE OAUTH CALLBACK (PKCE + STATE)
+// ======================================================================
+// @desc    Handle Google OAuth callback, verify PKCE + state, exchange code
+// @route   GET /api/v1/auth/google/callback
+// @access  Public
+// ----------------------------------------------------------------------
+exports.googleCallbackService = asyncHandler(async (req, res, next) => {
+  const { code, state } = req.query;
+
+  logger.info("Google OAuth callback received", {
+    meta: {
+      codeProvided: !!code,
+      stateProvided: !!state,
+      correlationId: req.correlationId
+    }
+  });
+
+  if (!code || !state) {
+    return next(new ApiError("Invalid OAuth callback parameters", 400));
+  }
+
+  // 1) Validate state
+  const temp = await OAuthTemp.findOne({ state });
+
+  logger.info("OAuthTemp lookup result", {
+    meta: {
+      found: !!temp,
+      state,
+      correlationId: req.correlationId
+    }
+  });
+
+  if (!temp) {
+    return next(new ApiError("Invalid or expired OAuth state", 400));
+  }
+
+  const codeVerifier = temp.codeVerifier;
+
+  // 2) Exchange code for tokens
+  logger.info("Exchanging code for tokens", {
+    meta: {
+      state,
+      hasCodeVerifier: !!codeVerifier,
+      correlationId: req.correlationId
+    }
+  });
+
+  const tokenResponse = await axios.post(
+    "https://oauth2.googleapis.com/token",
+    {
+      client_id: process.env.GOOGLE_CLIENT_ID,
+      client_secret: process.env.GOOGLE_CLIENT_SECRET,
+      code,
+      redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+      grant_type: "authorization_code",
+      code_verifier: codeVerifier,
+    },
+    { headers: { "Content-Type": "application/json" } }
+  );
+
+  logger.info("Google token exchange successful", {
+    meta: {
+      hasIdToken: !!tokenResponse.data?.id_token,
+      correlationId: req.correlationId
+    }
+  });
+
+  const { id_token } = tokenResponse.data;
+  const googleUser = jwt.decode(id_token);
+
+  logger.info("Decoded Google user", {
+    meta: {
+      email: googleUser?.email,
+      sub: googleUser?.sub,
+      correlationId: req.correlationId
+    }
+  });
+
+  if (!googleUser || !googleUser.email) {
+    return next(new ApiError("Failed to retrieve Google user info", 400));
+  }
+
+  // 3) Find or create user
+  let user = await User.findOne({ email: googleUser.email });
+
+  logger.info("User lookup result", {
+    meta: {
+      exists: !!user,
+      email: googleUser.email,
+      correlationId: req.correlationId
+    }
+  });
+
+  if (!user) {
+    logger.info("Creating new Google user", {
+      meta: {
+        email: googleUser.email,
+        correlationId: req.correlationId
+      }
+    });
+
+    user = await User.create({
+      name: googleUser.name,
+      email: googleUser.email,
+      googleId: googleUser.sub,
+      provider: "google",
+      password: crypto.randomBytes(20).toString("hex"),
+      passwordManuallySet: false,
+    });
+  } else if (!user.googleId) {
+    logger.info("Linking Google account to existing user", {
+      meta: {
+        userId: user._id,
+        correlationId: req.correlationId
+      }
+    });
+
+    user.googleId = googleUser.sub;
+    user.provider = "google";
+    await user.save();
+  }
+
+  // 4) Generate tokens
+  const accessToken = createAccessToken(user._id);
+  const refreshToken = createRefreshToken(user._id);
+
+  // 5) Create session
+  logger.info("Creating session for Google user", {
+    meta: {
+      userId: user._id,
+      correlationId: req.correlationId
+    }
+  });
+
+await module.exports.createSession(user._id, refreshToken, req);
+
+
+  // 6) Set cookie
+  logger.info("Setting refresh token cookie", {
+    meta: {
+      userId: user._id,
+      correlationId: req.correlationId
+    }
+  });
+module.exports.setRefreshTokenCookie(res, refreshToken);
+
+  // 7) Delete temp entry
+  logger.info("Deleting OAuthTemp entry", {
+    meta: {
+      tempId: temp._id,
+      correlationId: req.correlationId
+    }
+  });
+
+  await OAuthTemp.deleteOne({ _id: temp._id });
+
+  // 8) Redirect
+  logger.info("Google OAuth flow completed successfully", {
+    meta: {
+      userId: user._id,
+      redirect: `${process.env.CLIENT_URL}/oauth-success?token=${accessToken}`,
+      correlationId: req.correlationId
+    }
+  });
+
+  return res.redirect(
+    `${process.env.CLIENT_URL}/oauth-success?token=${accessToken}`
+  );
+});
+
+
+// ======================================================================
+// UNLINK GOOGLE ACCOUNT
+// ======================================================================
+// @desc    Disconnect Google account from the current user
+// @route   DELETE /api/v1/auth/unlink/google
+// @access  Private
+// ----------------------------------------------------------------------
+exports.googleUnlinkService = asyncHandler(async (req, res, next) => {
+  const user = req.user;
+
+  logger.info("Google unlink attempt", {
+    meta: {
+      userId: user._id,
+      hasGoogleId: !!user.googleId,
+      passwordManuallySet: user.passwordManuallySet,
+      correlationId: req.correlationId
+    }
+  });
+
+  // Google account not linked
+  if (!user.googleId) {
+    logger.warn("Google unlink failed: account not linked", {
+      meta: {
+        userId: user._id,
+        correlationId: req.correlationId
+      }
+    });
+
+    return res.status(400).json({
+      status: "fail",
+      message: "Google account is not linked",
+    });
+  }
+
+console.log("UNLINK CHECK:", {
+  id: user._id,
+  passwordManuallySet: user.passwordManuallySet
+});
+
+
+  // User must have manually set a password before unlinking Google
+  if (!user.passwordManuallySet) {
+    logger.warn("Google unlink blocked: password not manually set", {
+      meta: {
+        userId: user._id,
+        correlationId: req.correlationId
+      }
+    });
+
+    return res.status(400).json({
+      status: "fail",
+      message: "You must set a password before unlinking Google",
+    });
+  }
+
+  logger.info("Google unlink proceeding", {
+    meta: {
+      userId: user._id,
+      correlationId: req.correlationId
+    }
+  });
+
+  user.googleId = undefined;
+  user.provider = "local";
+  await user.save();
+
+  logger.info("Google account unlinked successfully", {
+    meta: {
+      userId: user._id,
+      correlationId: req.correlationId
+    }
+  });
+
+  return res.status(200).json({
+    status: "success",
+    message: "Google account unlinked successfully",
+  });
+});
+
+
+// ======================================================================
+// SET PASSWORD FOR USERS WITHOUT A MANUALLY SET PASSWORD (GOOGLE USERS)
+// ======================================================================
+// @desc    Set a password for the current user if they haven't manually set one
+// @route   POST /api/v1/auth/set-password
+// @access  Private
+// ----------------------------------------------------------------------
+exports.setPasswordService = asyncHandler(async (req, res, next) => {
+  const user = req.user;
+  const { password } = req.body;
+
+  logger.info("Set password attempt", {
+    meta: {
+      userId: user._id,
+      passwordManuallySet: user.passwordManuallySet,
+      correlationId: req.correlationId
+    }
+  });
+
+  // Validate password
+  if (!password || password.length < 6) {
+    logger.warn("Set password failed: invalid password", {
+      meta: {
+        userId: user._id,
+        providedLength: password ? password.length : 0,
+        correlationId: req.correlationId
+      }
+    });
+
+    return res.status(400).json({
+      status: "fail",
+      message: "Password must be at least 6 characters",
+    });
+  }
+
+  // User already manually set a password
+  if (user.passwordManuallySet) {
+    logger.warn("Set password blocked: password already manually set", {
+      meta: {
+        userId: user._id,
+        correlationId: req.correlationId
+      }
+    });
+
+    return res.status(400).json({
+      status: "fail",
+      message: "You already have a password. Use change password instead.",
+    });
+  }
+console.log("SET-PASSWORD BEFORE SAVE:", {
+  id: user._id,
+  passwordManuallySet: user.passwordManuallySet
+});
+
+
+  // Set new password
+  user.password = password;
+  user.passwordManuallySet = true;
+  await user.save();
+
+console.log("SET-PASSWORD AFTER SAVE:", {
+  id: user._id,
+  passwordManuallySet: user.passwordManuallySet
+});
+
+
+  logger.info("Password set successfully", {
+    meta: {
+      userId: user._id,
+      correlationId: req.correlationId
+    }
+  });
+
+  return res.status(200).json({
+    status: "success",
+    message: "Password set successfully",
+  });
+});
+
+
+// ======================================================================
+// GOOGLE OAUTH INIT (PKCE + STATE)
+// ======================================================================
+// @desc    Generate PKCE parameters and Google OAuth URL
+// @route   GET /api/v1/auth/google/init
+// @access  Public
+// ----------------------------------------------------------------------
+exports.googleInitService = asyncHandler(async (req, res, next) => {
+  const state = crypto.randomBytes(32).toString("hex");
+  const codeVerifier = crypto.randomBytes(64).toString("hex");
+
+  const codeChallenge = crypto
+    .createHash("sha256")
+    .update(codeVerifier)
+    .digest("base64")
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
+
+  await OAuthTemp.create({
+    state,
+    codeVerifier,
+    ip: req.ip,
+    userAgent: req.headers["user-agent"],
+  });
+
+  const params = new URLSearchParams({
+    client_id: process.env.GOOGLE_CLIENT_ID,
+    redirect_uri: process.env.GOOGLE_REDIRECT_URI,
+    response_type: "code",
+    scope: "openid email profile",
+    access_type: "offline",
+    prompt: "consent",
+    state,
+    code_challenge: codeChallenge,
+    code_challenge_method: "S256",
+  });
+
+  const googleAuthUrl = `https://accounts.google.com/o/oauth2/v2/auth?${params.toString()}`;
+
+  return res.status(200).json({
+    status: "success",
+    url: googleAuthUrl,
+  });
+  
 });

@@ -19,22 +19,30 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
     },
     phone: {
-  type: String,
-  unique: true,
-  sparse: true,
-},
+      type: String,
+      unique: true,
+      sparse: true,
+    },
 
     profileImg: String,
 
-    password: {
-      type: String,
-      required: [true, "password required"],
-      minlength: [6, "Too short password"],
-    },
+password: {
+  type: String,
+  required: function () {
+    return this.provider === "local";
+  },
+  minlength: [6, "Too short password"],
+}
+,
     passwordChangedAt: Date,
     passwordResetCode: String,
     passwordResetExpires: Date,
     passwordResetVerified: Boolean,
+    passwordResetAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lastPasswordResetRequest: Date,
 
     role: {
       type: String,
@@ -45,6 +53,22 @@ const userSchema = new mongoose.Schema(
     active: {
       type: Boolean,
       default: true,
+    },
+
+    googleId: {
+      type: String,
+      default: null,
+    },
+
+   provider: {
+  type: String,
+  enum: ["local", "google"],
+  default: "local",
+},
+
+    passwordManuallySet: {
+      type: Boolean,
+      default: false,
     },
 
     studentData: {
@@ -88,7 +112,7 @@ const userSchema = new mongoose.Schema(
           ref: "Subject",
         },
       ],
-        lectures: [
+      lectures: [
         {
           type: mongoose.Schema.ObjectId,
           ref: "Lecture",
@@ -96,7 +120,7 @@ const userSchema = new mongoose.Schema(
       ],
     },
   },
-  { timestamps: true }
+  { timestamps: true },
 );
 
 userSchema.pre("save", async function (next) {

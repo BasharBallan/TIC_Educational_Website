@@ -8,6 +8,7 @@ const ApiError = require('../utils/apiError');
 const { uploadSingleImage } = require('../middlewares/uploadImageMiddleware');
 const createToken = require('../utils/createToken');
 const User = require('../models/userModel');
+const logger = require("../utils/logger");
 
 
 // ======================================================================

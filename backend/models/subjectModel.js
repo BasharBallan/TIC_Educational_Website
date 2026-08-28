@@ -29,7 +29,7 @@ const subjectSchema = new mongoose.Schema(
             {
               type: mongoose.Schema.ObjectId,
               ref: "Lecture",
-            },  
+            },
           ],
     description: String,
   },

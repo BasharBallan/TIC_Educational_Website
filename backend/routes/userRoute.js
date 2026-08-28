@@ -9,6 +9,7 @@ const {
   getDoctorValidator,
   updateDoctorValidator,
   deleteDoctorValidator,
+  completeProfileValidator
 } = require("../utils/validators/userValidator");
 
 const {
@@ -25,7 +26,8 @@ const {
   updateDoctor,
   deleteDoctor,
   uploadUserImage,
-  resizeImage
+  resizeImage,
+  completeProfile,
 } = require("../services/userService");
 
 const { protect, allowedTo } = require("../services/authService");
@@ -66,7 +68,7 @@ const router = express.Router();
  *       401:
  *         description: Unauthorized
  */
-router.get("/getMe", protect, getLoggedUserData, getUser);
+router.get("/getMe", protect, getLoggedUserData);
 
 /**
  * @swagger
@@ -142,7 +144,7 @@ router.put(
 router.post(
   "/updateMe",
   protect,
-  uploadUserImage,   
+  uploadUserImage,
   resizeImage,
   updateLoggedUserValidator,
   updateLoggedUserData
@@ -413,3 +415,59 @@ router.delete(
 );
 
 module.exports = router;
+/**
+ * @swagger
+ * /api/v1/users/complete-profile:
+ *   put:
+ *     summary: Complete logged-in user's profile information
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Allows the authenticated user to complete their profile based on their role (student/doctor).
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               phone:
+ *                 type: string
+ *                 example: "0999999999"
+ *               profileImg:
+ *                 type: string
+ *                 format: binary
+ *               studentNumber:
+ *                 type: number
+ *                 example: 20241234
+ *               year:
+ *                 type: string
+ *                 example: "66a1f0c9c3b7a2d4f8c9a123"
+ *               semester:
+ *                 type: string
+ *                 example: "66a1f0c9c3b7a2d4f8c9a456"
+ *               subjects:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                 example: ["66a1f0c9c3b7a2d4f8c9a789"]
+ *               specialization:
+ *                 type: string
+ *                 example: "Cardiology"
+ *               academicTitle:
+ *                 type: string
+ *                 example: "Professor"
+ *     responses:
+ *       200:
+ *         description: Profile completed successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.put(
+  "/complete-profile",
+  protect,
+  uploadUserImage,
+  resizeImage,
+  completeProfileValidator,
+  completeProfile
+);

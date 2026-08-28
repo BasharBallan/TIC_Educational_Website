@@ -35,7 +35,7 @@ Use these tokens to test the API without needing to log in.
 
 ### 👑 Admin Token
 <div style="display:flex;align-items:center;gap:10px;">
-  <code id="adminToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OTVlYTVkN2M2ZDE0MzFmZjlhNDE0OTMiLCJpYXQiOjE3NzI3NTM2MzQsImV4cCI6Nzk1MzI3NTM2MzR9.eB7D2Z5DbWFRBjToVZ4dR4f_ltYiu5TTgHtD3oFx3YY</code>
+  <code id="adminToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTZlOGZkNjAyYzk2ZTQwZmMzMTA5MzciLCJyb2xlIjoiYWRtaW4iLCJpYXQiOjE3ODU2MzA3MzAsImV4cCI6MTc4NTYzMjUzMH0.C-gYDQM2t4bnIki8AfcVlG5OmZkAVDyFmToS-hE_mlc</code>
   <button onclick="navigator.clipboard.writeText(document.getElementById('adminToken').innerText)">Copy</button>
 </div>
 
@@ -47,7 +47,7 @@ Use these tokens to test the API without needing to log in.
 
 ### 🎓 Student Token
 <div style="display:flex;align-items:center;gap:10px;">
-  <code id="studentToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2OWEwM2FiMDc5YTE2ODAxZGIzOGUxNzIiLCJpYXQiOjE3NzIyMzE0NDMsImV4cCI6Nzk1MzIyMzE0NDN9.DFI9Xn_5o8A1a5s5nDApoP-XuOvSP41mXLH8cnHxfDo</code>
+  <code id="studentToken">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOiI2YTZlOGYxMTE1YzU3NTkxZmZmNzc4YmMiLCJpYXQiOjE3ODU2MzA0ODIsImV4cCI6MTc4NTYzMjI4Mn0.j8qq4UGum5kogKRH_vvaT7ArMq3rzcLn_SOBWRBvwbk</code>
   <button onclick="navigator.clipboard.writeText(document.getElementById('studentToken').innerText)">Copy</button>
 </div>
 

@@ -6,12 +6,12 @@ const compression = require('compression');
 const rateLimit = require('express-rate-limit');
 const hpp = require('hpp');
 const cookieParser = require("cookie-parser");
+const helmet = require("helmet");
 
 const langMiddleware = require('./middlewares/langMiddleware');
 const mountRoutes = require('./routes');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
-const helmet = require("helmet");
 
 // Winston Logging Middlewares
 const correlationId = require("./middlewares/correlationId");
@@ -20,7 +20,17 @@ const errorLogger = require("./middlewares/errorLogger");
 
 const app = express();
 
+// ------------------------------------------------------
+// Inject io BEFORE any routes (server.js will attach io)
+// ------------------------------------------------------
+app.use((req, res, next) => {
+  req.io = global.io;   // 🔥 io injected globally
+  next();
+});
 
+// ------------------------------------------------------
+// CORS
+// ------------------------------------------------------
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -83,7 +93,14 @@ app.use("/uploads", express.static("uploads"));
 const { swaggerUi, swaggerSpec } = require("./swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-// Mount routes
+app.use((req, res, next) => {
+  req.io = global.io;
+  next();
+});
+
+// ------------------------------------------------------
+// Mount routes AFTER injecting req.io
+// ------------------------------------------------------
 mountRoutes(app);
 
 // Handle unknown routes
@@ -91,7 +108,7 @@ app.all('*', (req, res, next) => {
   next(new ApiError(`Can't find this route: ${req.originalUrl}`, 404));
 });
 
-// Winston Error Logger 
+// Winston Error Logger
 app.use(errorLogger);
 
 // Global error handler

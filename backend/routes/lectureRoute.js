@@ -8,6 +8,7 @@ const {
   getLecture,
   deleteLecture,
   getMyLectures,
+  getLecturesBySubject,
 } = require("../services/lectureService");
 
 const {
@@ -119,6 +120,12 @@ router.delete(
 );
 
 
+router.get(
+  "/subject/:subjectId",
+  protect,
+  allowedTo("student", "doctor", "admin"),
+  getLecturesBySubject
+);
 
 
 module.exports = router;

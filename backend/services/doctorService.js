@@ -2,18 +2,19 @@ const asyncHandler = require("express-async-handler");
 const Lecture = require("../models/lectureModel");
 const User = require("../models/userModel");
 const Subject = require("../models/subjectModel");
+const Notification = require("../models/notificationModel");
 const ApiError = require("../utils/apiError");
-const cacheService = require("../services/cacheService");
+const cacheService = require("./cacheService");
 const logger = require("../utils/logger");
+const { sendNotification } = require("./notificationEmitter");
 
 // ======================================================================
 // HELPER: Check if doctor teaches a specific subject
 // ======================================================================
-const doctorTeachesSubject = (doctor, subjectId) => {
-  return doctor.doctorData.subjects.some(
+const doctorTeachesSubject = (doctor, subjectId) =>
+  doctor.doctorData.subjects.some(
     (sub) => sub.toString() === subjectId.toString()
   );
-};
 
 // ======================================================================
 // GET ALL LECTURES FOR THIS DOCTOR
@@ -63,9 +64,8 @@ exports.getMyLecture = asyncHandler(async (req, res, next) => {
 // @access  Private/Doctor
 // ======================================================================
 exports.createMyLecture = asyncHandler(async (req, res, next) => {
-  const { title, description, subjectId } = req.body;
+  const { title, description, subjectId, content } = req.body;
 
-  // Log: attempt
   logger.info("Create lecture attempt", {
     meta: {
       doctorId: req.user._id,
@@ -73,110 +73,105 @@ exports.createMyLecture = asyncHandler(async (req, res, next) => {
       title,
       ip: req.ip,
       device: req.headers["user-agent"],
-      correlationId: req.correlationId
-    }
+      correlationId: req.correlationId,
+    },
   });
 
-  // 1) Ensure subject exists
   const subjectDoc = await Subject.findById(subjectId);
   if (!subjectDoc) {
-    logger.warn("Create lecture failed: subject not found", {
-      meta: {
-        doctorId: req.user._id,
-        subjectId,
-        correlationId: req.correlationId
-      }
-    });
     return next(new ApiError("Subject not found", 404));
   }
 
-  // 2) Ensure doctor teaches this subject
   if (!doctorTeachesSubject(req.user, subjectId)) {
-    logger.warn("Create lecture failed: doctor not assigned to subject", {
-      meta: {
-        doctorId: req.user._id,
-        subjectId,
-        correlationId: req.correlationId
-      }
-    });
     return next(new ApiError("You are not assigned to this subject", 403));
   }
 
-  // 3) Handle file upload (optional)
   let fileData = null;
   if (req.file) {
     fileData = {
       url: `/uploads/lectures/${req.file.filename}`,
       type: req.file.mimetype,
     };
-
-    logger.info("Lecture file uploaded", {
-      meta: {
-        doctorId: req.user._id,
-        fileName: req.file.filename,
-        fileType: req.file.mimetype,
-        correlationId: req.correlationId
-      }
-    });
   }
 
-  // 4) Create lecture
+  let quizData = null;
+  if (req.body.quiz) {
+    try {
+      quizData = JSON.parse(req.body.quiz);
+    } catch (err) {
+      return next(new ApiError("Invalid quiz format", 400));
+    }
+  }
+
   const lecture = await Lecture.create({
     title,
     description,
     subjectId,
     doctorId: req.user._id,
     file: fileData,
+    content: content || null,
+    quiz: quizData || [],
   });
 
-  logger.info("Lecture created successfully", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId: lecture._id,
-      subjectId,
-      correlationId: req.correlationId
-    }
-  });
-
-  // 5) Add lecture to subject
   await Subject.findByIdAndUpdate(subjectId, {
     $push: { lectures: lecture._id },
   });
 
-  logger.info("Lecture added to subject", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId: lecture._id,
-      subjectId,
-      correlationId: req.correlationId
-    }
-  });
-
-  // 6) Add lecture to doctor
   await User.findByIdAndUpdate(req.user._id, {
     $push: { "doctorData.lectures": lecture._id },
   });
 
-  logger.info("Lecture added to doctor", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId: lecture._id,
-      correlationId: req.correlationId
-    }
-  });
-
-  // 7) Cache invalidation
   await cacheService.del(`lectures:doctor:${req.user._id}`);
   await cacheService.del(`lectures:subject:${subjectId}`);
 
-  logger.info("Cache invalidated for lecture lists", {
-    meta: {
-      doctorId: req.user._id,
-      subjectId,
-      correlationId: req.correlationId
-    }
-  });
+  // ======================================================================
+  // REAL-TIME + DATABASE NOTIFICATION (students by year only)
+  // ======================================================================
+  try {
+    const yearId = subjectDoc.yearId;
 
+    const students = await User.find({
+      role: "student",
+      "studentData.year": subjectDoc.yearId,
+    }).select("_id");
+
+    if (req.io && students.length > 0) {
+      await Promise.all(
+        students.map(async (student) => {
+          if (student._id.toString() === req.user._id.toString()) return;
+
+          const notification = await Notification.create({
+            userId: student._id,
+            type: "lecture:new",
+            message: `New lecture added: ${lecture.title}`,
+            payload: {
+              lectureId: lecture._id,
+              subjectId: lecture.subjectId,
+              doctorId: lecture.doctorId,
+              title: lecture.title,
+            },
+          });
+
+          // Real-time emit to student's room
+          req.io.to(student._id.toString()).emit("notification:new", {
+            type: "lecture:new",
+            message: notification.message,
+            payload: notification.payload,
+          });
+        })
+      );
+    }
+  } catch (err) {
+    logger.error("Real-time notification failed (lecture:new)", {
+      meta: {
+        doctorId: req.user._id,
+        subjectId,
+        lectureId: lecture._id,
+        error: err.message,
+        correlationId: req.correlationId,
+      },
+    });
+  }
   res.status(201).json({
     status: "success",
     data: lecture,
@@ -200,7 +195,6 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
     return next(new ApiError("Lecture not found or not yours", 404));
   }
 
-  // If subject is being changed → validate again
   if (req.body.subjectId) {
     if (!doctorTeachesSubject(req.user, req.body.subjectId)) {
       return next(new ApiError("You are not assigned to this subject", 403));
@@ -211,16 +205,92 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
     new: true,
   });
 
-  // Cache invalidation
   await cacheService.del(`lecture:${req.params.id}`);
   await cacheService.del(`lectures:doctor:${req.user._id}`);
   await cacheService.del(`lectures:subject:${updated.subjectId}`);
+
+  // ======================================================================
+  // REAL-TIME + DATABASE NOTIFICATION (students by year only)
+  // ======================================================================
+  try {
+    const subjectDoc = await Subject.findById(updated.subjectId);
+    const yearId = subjectDoc.yearId;
+
+    const students = await User.find({
+      role: "student",
+      yearId: yearId,
+    }).select("_id");
+
+    if (req.io && students.length > 0) {
+      await Promise.all(
+        students.map(async (student) => {
+          if (student._id.toString() === req.user._id.toString()) return;
+
+          const notification = await Notification.create({
+            userId: student._id,
+            type: "lecture:update",
+            message: `Lecture updated: ${updated.title}`,
+            payload: {
+              lectureId: updated._id,
+              subjectId: updated.subjectId,
+              doctorId: updated.doctorId,
+              title: updated.title,
+            },
+          });
+
+          sendNotification(
+            req.io,
+            student._id,
+            "lecture:update",
+            notification.message,
+            notification.payload
+          );
+        })
+      );
+    } else if (req.io) {
+      const allStudents = await User.find({ role: "student" }).select("_id");
+
+      await Promise.all(
+        allStudents.map(async (student) => {
+          const notification = await Notification.create({
+            userId: student._id,
+            type: "lecture:update",
+            message: `Lecture updated: ${updated.title}`,
+            payload: {
+              lectureId: updated._id,
+              subjectId: updated.subjectId,
+              doctorId: updated.doctorId,
+              title: updated.title,
+            },
+          });
+
+          sendNotification(
+            req.io,
+            student._id,
+            "lecture:update",
+            notification.message,
+            notification.payload
+          );
+        })
+      );
+    }
+  } catch (err) {
+    logger.error("Real-time notification failed (lecture:update)", {
+      meta: {
+        doctorId: req.user._id,
+        lectureId: updated._id,
+        error: err.message,
+        correlationId: req.correlationId,
+      },
+    });
+  }
 
   res.status(200).json({
     status: "success",
     data: updated,
   });
 });
+
 
 // ======================================================================
 // DELETE LECTURE
@@ -232,18 +302,16 @@ exports.updateMyLecture = asyncHandler(async (req, res, next) => {
 exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
   const lectureId = req.params.id;
 
-  // Log: delete attempt
   logger.info("Delete lecture attempt", {
     meta: {
       doctorId: req.user._id,
       lectureId,
       ip: req.ip,
       device: req.headers["user-agent"],
-      correlationId: req.correlationId
-    }
+      correlationId: req.correlationId,
+    },
   });
 
-  // 1) Delete lecture only if it belongs to the doctor
   const lecture = await Lecture.findOneAndDelete({
     _id: lectureId,
     doctorId: req.user._id,
@@ -254,8 +322,8 @@ exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
       meta: {
         doctorId: req.user._id,
         lectureId,
-        correlationId: req.correlationId
-      }
+        correlationId: req.correlationId,
+      },
     });
 
     return next(new ApiError("Lecture not found or not yours", 404));
@@ -266,50 +334,148 @@ exports.deleteMyLecture = asyncHandler(async (req, res, next) => {
       doctorId: req.user._id,
       lectureId,
       subjectId: lecture.subjectId,
-      correlationId: req.correlationId
-    }
+      correlationId: req.correlationId,
+    },
   });
 
-  // 2) Remove lecture reference from subject
   await Subject.updateOne(
     { _id: lecture.subjectId },
     { $pull: { lectures: lecture._id } }
   );
 
-  logger.info("Lecture removed from subject", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId,
-      subjectId: lecture.subjectId,
-      correlationId: req.correlationId
-    }
-  });
-
-  // 3) Cache invalidation
   await cacheService.del(`lecture:${lectureId}`);
   await cacheService.del(`lectures:doctor:${req.user._id}`);
   await cacheService.del(`lectures:subject:${lecture.subjectId}`);
 
-  logger.info("Cache invalidated for lecture", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId,
-      subjectId: lecture.subjectId,
-      correlationId: req.correlationId
-    }
-  });
+  // ======================================================================
+  // REAL-TIME + DATABASE NOTIFICATION (students by year only)
+  // ======================================================================
+  try {
+    const subjectDoc = await Subject.findById(lecture.subjectId);
+    const yearId = subjectDoc.yearId;
 
-  // 4) Response
-  logger.info("Delete lecture successful", {
-    meta: {
-      doctorId: req.user._id,
-      lectureId,
-      correlationId: req.correlationId
+    const students = await User.find({
+      role: "student",
+      yearId: yearId,
+    }).select("_id");
+
+    if (req.io && students.length > 0) {
+      await Promise.all(
+        students.map(async (student) => {
+          if (student._id.toString() === req.user._id.toString()) return;
+
+          const notification = await Notification.create({
+            userId: student._id,
+            type: "lecture:delete",
+            message: `Lecture deleted: ${lecture.title}`,
+            payload: {
+              lectureId: lecture._id,
+              subjectId: lecture.subjectId,
+              doctorId: lecture.doctorId,
+              title: lecture.title,
+            },
+          });
+
+          sendNotification(
+            req.io,
+            student._id,
+            "lecture:delete",
+            notification.message,
+            notification.payload
+          );
+        })
+      );
+    } else if (req.io) {
+      const allStudents = await User.find({ role: "student" }).select("_id");
+
+      await Promise.all(
+        allStudents.map(async (student) => {
+          const notification = await Notification.create({
+            userId: student._id,
+            type: "lecture:delete",
+            message: `Lecture deleted: ${lecture.title}`,
+            payload: {
+              lectureId: lecture._id,
+              subjectId: lecture.subjectId,
+              doctorId: lecture.doctorId,
+              title: lecture.title,
+            },
+          });
+
+          sendNotification(
+            req.io,
+            student._id,
+            "lecture:delete",
+            notification.message,
+            notification.payload
+          );
+        })
+      );
     }
-  });
+  } catch (err) {
+    logger.error("Real-time notification failed (lecture:delete)", {
+      meta: {
+        doctorId: req.user._id,
+        lectureId: lecture._id,
+        error: err.message,
+        correlationId: req.correlationId,
+      },
+    });
+  }
 
   res.status(200).json({
     status: "success",
     message: "Lecture deleted successfully",
+  });
+});
+
+// ======================================================================
+// GET MY SUBJECTS
+// ======================================================================
+// @desc    Get all subjects assigned to the logged-in doctor
+// @route   GET /api/v1/doctor/subjects
+// @access  Private/Doctor
+// ======================================================================
+exports.getMySubjects = asyncHandler(async (req, res, next) => {
+  logger.info("Fetch doctor subjects attempt", {
+    meta: {
+      doctorId: req.user._id,
+      ip: req.ip,
+      device: req.headers["user-agent"],
+      correlationId: req.correlationId,
+    },
+  });
+
+  const subjects = await Subject.find({ doctorId: req.user._id }).select(
+    "name _id year"
+  );
+
+  if (!subjects.length) {
+    logger.warn("No subjects found for doctor", {
+      meta: {
+        doctorId: req.user._id,
+        correlationId: req.correlationId,
+      },
+    });
+
+    return res.status(200).json({
+      status: "success",
+      results: 0,
+      data: [],
+    });
+  }
+
+  logger.info("Doctor subjects fetched successfully", {
+    meta: {
+      doctorId: req.user._id,
+      subjectsCount: subjects.length,
+      correlationId: req.correlationId,
+    },
+  });
+
+  res.status(200).json({
+    status: "success",
+    results: subjects.length,
+    data: subjects,
   });
 });

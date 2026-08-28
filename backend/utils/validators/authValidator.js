@@ -3,11 +3,13 @@ const slugify = require("slugify");
 const User = require("../../models/userModel");
 const validatorMiddleware = require("../../middlewares/validatorMiddleware");
 
+
 // ------------------------------------------------------
-// Signup Validator
+// Signup Validator (Step 1)
 // ------------------------------------------------------
 
 exports.signupValidator = [
+  // Name
   check("name")
     .notEmpty()
     .withMessage("Name is required")
@@ -18,27 +20,22 @@ exports.signupValidator = [
       return true;
     }),
 
+  // Email
   check("email")
     .notEmpty()
     .withMessage("Email is required")
     .isEmail()
     .withMessage("Invalid email format"),
 
+  // Password
   check("password")
     .notEmpty()
     .withMessage("Password is required")
     .isStrongPassword()
-    .withMessage(
-      "Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"
-    )
-    .custom((password, { req }) => {
-      if (password !== req.body.passwordConfirm) {
-        throw new Error("Password confirmation does not match");
-      }
-      return true;
-    }),
+    .withMessage("Password must include uppercase, lowercase, number, symbol, and be at least 8 characters"),
 
-  check("passwordConfirm")
+  // Password Confirm
+  check("confirmPassword")
     .notEmpty()
     .withMessage("Password confirmation is required"),
 

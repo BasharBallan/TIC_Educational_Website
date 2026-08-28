@@ -1,0 +1,58 @@
+🗂️ خطة مراجعة SQL — 30 إلى 60 دقيقة يومياً
+🧱 المرحلة 1 — مراجعة الأساسيات (يومان)
+SELECT basics
+
+GROUP BY + HAVING
+
+Aggregations
+
+🎯 الهدف: ترجع إيدك تمشي بسرعة.
+
+🔗 المرحلة 2 — العلاقات و الـ JOINs (3 أيام)
+INNER / LEFT / RIGHT JOIN
+
+JOIN على 3 جداول
+
+Self Join
+
+🎯 الهدف: تكتب JOINs بدون ما تتوقف تفكّر.
+
+🧩 المرحلة 3 — Subqueries + CTEs (3 أيام)
+Subquery داخل WHERE
+
+CTE
+
+Recursive CTE
+
+🎯 الهدف: بناء Queries معقّدة بشكل نظيف.
+
+⚙️ المرحلة 4 — Database Design (3 أيام)
+
+
+Normalization 1NF → 3NF
+
+ERD relationships
+
+Primary/Foreign Keys
+
+🎯 الهدف: تصمّم DB صح بدون تكرار.
+
+🚀 المرحلة 5 — Indexing + Performance (5 أيام) ← أهم مرحلة للـ Senior
+Index types
+
+Composite Index
+
+Query Execution Plan
+
+Optimize slow queries
+
+🎯 الهدف: تسرّع Query من 2 ثانية → 50ms.
+
+🔒 المرحلة 6 — Transactions + Concurrency (3 أيام)
+Transactions
+
+Isolation Levels
+
+Deadlocks
+
+🎯 الهدف: تفهم مشاكل الـ locking وتعرف تحلّها.

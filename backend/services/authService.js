@@ -4,14 +4,19 @@ const crypto = require("crypto");
 const axios = require("axios");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
-
+const { v4: uuidv4 } = require('uuid');
+const sharp = require('sharp');
 const asyncHandler = require("express-async-handler");
 const ApiError = require("../utils/apiError");
 const sendEmail = require("../utils/sendEmail");
 
 const createToken = require("../utils/createToken");
 const User = require("../models/userModel");
+const Year = require("../models/yearModel");
+const Semester = require("../models/semesterModel");
+
 const OAuthTemp = require("../models/oauthTempModel");
+const { uploadMixOfImages } = require('../middlewares/uploadImageMiddleware');
 
 const getMessage = require("../utils/getMessage");
 const UserSession = require("../models/userSessionModel");
@@ -23,6 +28,41 @@ const logger = require("../utils/logger");
 // ======================================================================
 // TOKEN HELPERS (Access / Refresh Tokens + Session Creation)
 // ======================================================================
+exports.uploadSignupImages = uploadMixOfImages([
+  { name: "profileImg", maxCount: 1 },
+  { name: "universityCardImg", maxCount: 1 },
+]);
+
+
+exports.resizeSignupImages = asyncHandler(async (req, res, next) => {
+  // Profile Image
+  if (req.files.profileImg) {
+    const profileFilename = `profile-${uuidv4()}-${Date.now()}.jpeg`;
+
+    await sharp(req.files.profileImg[0].buffer)
+      .resize(600, 600)
+      .toFormat("jpeg")
+      .jpeg({ quality: 95 })
+      .toFile(`uploads/users/${profileFilename}`);
+
+    req.body.profileImg = profileFilename;
+  }
+
+  // University Card Image
+  if (req.files.universityCardImg) {
+    const cardFilename = `card-${uuidv4()}-${Date.now()}.jpeg`;
+
+    await sharp(req.files.universityCardImg[0].buffer)
+      .resize(600, 600)
+      .toFormat("jpeg")
+      .jpeg({ quality: 95 })
+      .toFile(`uploads/users/${cardFilename}`);
+
+    req.body.universityCardImg = cardFilename;
+  }
+
+  next();
+});
 
 // Create short-lived access token
 const createAccessToken = (userId) =>
@@ -41,12 +81,20 @@ const createRefreshToken = (userId) =>
 // ======================================================================
 module.exports.createSession = async (userId, refreshToken, req) => {
   try {
+    const userAgent =
+      req?.headers?.["user-agent"] ||
+      req?.fingerprint ||
+      "unknown-device";
+
+    const ip = req?.ip || "0.0.0.0";
+    const correlationId = req?.correlationId || uuidv4();
+
     logger.info("Creating new session", {
       meta: {
-        userId, 
-        device: req.headers["user-agent"],
-        ip: req.ip,
-        correlationId: req.correlationId
+        userId,
+        device: userAgent,
+        ip,
+        correlationId
       }
     });
 
@@ -59,18 +107,20 @@ module.exports.createSession = async (userId, refreshToken, req) => {
       24 * 60 * 60 * 1000;
 
     const session = await UserSession.create({
-      user: userId, 
+      user: userId,
       refreshTokenHash,
-      userAgent: req.headers["user-agent"],
-      ip: req.ip,
+      userAgent,
+      ip,
       expiresAt: new Date(Date.now() + expiresInMs),
+      fingerprint: userAgent, // REQUIRED FIELD
+      correlationId
     });
 
     logger.info("Session created successfully", {
       meta: {
         userId,
         sessionId: session._id,
-        correlationId: req.correlationId
+        correlationId
       }
     });
 
@@ -81,7 +131,7 @@ module.exports.createSession = async (userId, refreshToken, req) => {
       meta: {
         userId,
         error: err.message,
-        correlationId: req.correlationId
+        correlationId: req?.correlationId
       }
     });
     throw err;
@@ -199,56 +249,6 @@ exports.checkNewDeviceAndSendAlert = async (userId, normalizedUA, ip, req) => {
 };
 
 
-// ======================================================================
-// AUTH: STUDENT SIGNUP
-// ======================================================================
-
-// ------------------------------------------------------
-// @desc    Student Signup
-// @route   POST /api/v1/auth/signup
-// @access  Public
-// ------------------------------------------------------
-exports.signup = asyncHandler(async (req, res, next) => {
-  const { name, email, password, studentNumber, year, semester } = req.body;
-
-  // Check if email already exists
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return res.status(400).json({
-      status: "fail",
-      message: "Email already in use",
-    });
-  }
-
-  // Create student account
-  const student = await User.create({
-    name,
-    email,
-    password,
-    role: "student",
-    studentData: {
-      studentNumber,
-      year,
-      semester,
-    },
-  });
-
-  // Generate tokens + session
-  const accessToken = createAccessToken(student._id);
-  const refreshToken = createRefreshToken(student._id);
-  await exports.createSession(student._id, refreshToken, req);
-
-  exports.setRefreshTokenCookie(res, refreshToken);
-
-  student.password = undefined;
-
-  res.status(201).json({
-    status: "success",
-    message: "Signup successful",
-    data: student,
-    token: accessToken,
-  });
-});
 
 
 // ======================================================================
@@ -281,6 +281,30 @@ exports.login = asyncHandler(async (req, res, next) => {
   const isCorrectPassword = await bcrypt.compare(password, user.password);
   if (!isCorrectPassword) {
     return next(new ApiError("Incorrect email or password", 401));
+  }
+  // ============================
+  // Prevent student login before admin approval
+  // ============================
+  if (user.role === "student") {
+    if (!user.emailVerified) {
+      return next(new ApiError("Please verify your email first", 403));
+    }
+
+    if (!user.profileCompleted) {
+      return next(new ApiError("Please complete your profile first", 403));
+    }
+
+    if (user.approvalStatus === "pending") {
+      return next(new ApiError("Your account is still under review", 403));
+    }
+
+    if (user.approvalStatus === "rejected") {
+      return next(new ApiError("Your account has been rejected", 403));
+    }
+
+    if (!user.isFullyActive) {
+      return next(new ApiError("Your account is not active yet", 403));
+    }
   }
 
   // 3) Create tokens
@@ -324,7 +348,7 @@ const newSession = await UserSession.create({
   logger.info("Session created", {
     meta: {
       userId: user._id,
-      sessionId: newSession.insertedId,
+      sessionId: newSession._id,
       ip,
       device: normalizedUA,
       correlationId: req.correlationId
@@ -360,8 +384,517 @@ const newSession = await UserSession.create({
   });
 });
 
+// ======================================================================
+// AUTH: STUDENT SIGNUP (STEP 1)
+// ======================================================================
+
+// ------------------------------------------------------
+// @desc    Student Signup - Step 1 (Email + Password + Name)
+// @route   POST /api/v1/auth/signup
+// @access  Public
+// ------------------------------------------------------
+exports.signup = asyncHandler(async (req, res, next) => {
+  const { name, email, password, confirmPassword } = req.body;
+
+  // ============================
+  // Validate input
+  // ============================
+  if (!name || !email || !password || !confirmPassword) {
+    return next(new ApiError("All fields are required", 400));
+  }
+
+  if (password !== confirmPassword) {
+    return next(new ApiError("Passwords do not match", 400));
+  }
+
+  // ============================
+  // Check if email already exists
+  // ============================
+  const existingUser = await User.findOne({ email });
+  if (existingUser) {
+    return next(new ApiError("Email already in use", 400));
+  }
+
+  // ============================
+  // Generate verification code
+  // ============================
+  const verificationCode = crypto.randomInt(100000, 999999).toString();
+
+  // Hash the code (same style as forgotPassword)
+  const hashedCode = crypto
+    .createHash("sha256")
+    .update(verificationCode)
+    .digest("hex");
+
+  // ============================
+  // Create user with signup step 1
+  // ============================
+  const user = await User.create({
+    name,
+    email,
+    password,
+    role: "student",
+
+    signupStatus: "email_submitted",
+
+    emailVerificationCode: hashedCode,
+    emailVerificationExpires: Date.now() + 10 * 60 * 1000, // 10 minutes
+    emailVerificationAttempts: 0,
+    emailVerified: false,
+
+    approvalStatus: "pending",
+    isFullyActive: false,
+  });
+
+  // ============================
+  // Email template (same style as forgotPassword)
+// ============================
+  const htmlMessage = `
+    <div style="font-family: Arial; padding: 20px;">
+      <h2>Email Verification Code</h2>
+      <p>Your verification code is:</p>
+      <h1>${verificationCode}</h1>
+      <p>Valid for 10 minutes.</p>
+    </div>
+  `;
+
+  // ============================
+  // Send email
+  // ============================
+  try {
+    await sendEmail({
+      email: user.email,
+      subject: "Your verification code",
+      html: htmlMessage,
+    });
+  } catch (err) {
+    // rollback
+    user.emailVerificationCode = undefined;
+    user.emailVerificationExpires = undefined;
+    user.emailVerificationAttempts = 0;
+    user.emailVerified = false;
+    await user.save();
+
+    return next(new ApiError("Failed to send verification email", 500));
+  }
+
+  user.password = undefined;
+
+  res.status(201).json({
+    status: "success",
+    message: "Verification code sent to your email",
+    data: {
+      userId: user._id,
+      email: user.email,
+    },
+  });
+});
 
 
+// ======================================================================
+// VERIFY EMAIL (SIGNUP STEP 2)
+// ======================================================================
+
+// ------------------------------------------------------
+// @desc    Verify email code
+// @route   POST /api/v1/auth/verify-email
+// @access  Public
+// ------------------------------------------------------
+exports.verifyEmail = asyncHandler(async (req, res, next) => {
+  const { email, code } = req.body;
+
+  // ============================
+  // Validate input
+  // ============================
+  if (!email || !code) {
+    return next(new ApiError("Email and verification code are required", 400));
+  }
+
+  // ============================
+  // Find user
+  // ============================
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ApiError("No user found with this email", 404));
+  }
+
+  // ============================
+  // Already verified?
+  // ============================
+  if (user.emailVerified === true) {
+    return next(new ApiError("Email already verified", 400));
+  }
+
+  // ============================
+  // Check if code exists
+  // ============================
+  if (!user.emailVerificationCode || !user.emailVerificationExpires) {
+    return next(new ApiError("No verification code found", 400));
+  }
+
+  // ============================
+  // Check expiration
+  // ============================
+  if (Date.now() > user.emailVerificationExpires) {
+    return next(new ApiError("Verification code expired", 400));
+  }
+
+  // ============================
+  // Hash incoming code
+  // ============================
+  const hashedCode = crypto
+    .createHash("sha256")
+    .update(code)
+    .digest("hex");
+
+  // ============================
+  // Compare codes
+  // ============================
+  if (hashedCode !== user.emailVerificationCode) {
+    user.emailVerificationAttempts += 1;
+    await user.save();
+    return next(new ApiError("Invalid verification code", 400));
+  }
+
+  // ============================
+  // SUCCESS — verify email
+  // ============================
+  user.emailVerified = true;
+  user.signupStatus = "email_verified";
+
+  // Remove code
+  user.emailVerificationCode = undefined;
+  user.emailVerificationExpires = undefined;
+  user.emailVerificationAttempts = 0;
+
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Email verified successfully",
+  });
+});
+// ======================================================================
+// COMPLETE PROFILE (SIGNUP STEP 3)
+// ======================================================================
+
+// ------------------------------------------------------
+// @desc    Complete student profile (upload images + phone + year)
+// @route   POST /api/v1/auth/complete-profile
+// @access  Public
+// ------------------------------------------------------
+exports.completeProfile = asyncHandler(async (req, res, next) => {
+  const {
+    email,
+    phone,
+    yearName,
+    semesterName,
+    profileImg,
+    universityCardImg,
+  } = req.body;
+
+  // ============================
+  // Validate input
+  // ============================
+  if (!email) return next(new ApiError("Email is required", 400));
+  if (!phone) return next(new ApiError("Phone number is required", 400));
+  if (!yearName) return next(new ApiError("Year name is required", 400));
+  if (!semesterName) return next(new ApiError("Semester name is required", 400));
+  if (!profileImg || !universityCardImg)
+    return next(new ApiError("Profile image and university card are required", 400));
+
+  // ============================
+  // Convert numeric year/semester to DB names
+  // ============================
+  const yearMap = {
+    "1": "Year 1",
+    "2": "Year 2",
+    "3": "Year 3",
+    "4": "Year 4",
+    "5": "Year 5",
+  };
+
+  const semesterMap = {
+    "1": "Semester 1",
+    "2": "Semester 2",
+  };
+
+  const yearNameFixed = yearMap[yearName] || yearName;
+  const semesterNameFixed = semesterMap[semesterName] || semesterName;
+
+  // ============================
+  // Find user
+  // ============================
+  const user = await User.findOne({ email });
+  if (!user) return next(new ApiError("No user found with this email", 404));
+
+  if (!user.emailVerified)
+    return next(new ApiError("Email must be verified first", 400));
+
+  if (user.profileCompleted)
+    return next(new ApiError("Profile already completed", 400));
+
+  // ============================
+  // Match Year by name
+  // ============================
+  const yearDoc = await Year.findOne({ name: yearNameFixed });
+  if (!yearDoc)
+    return next(new ApiError("Invalid year name", 400));
+
+  // ============================
+  // Match Semester by name
+  // ============================
+  const semesterDoc = await Semester.findOne({ name: semesterNameFixed });
+  if (!semesterDoc)
+    return next(new ApiError("Invalid semester name", 400));
+
+  // ============================
+  // Update profile
+  // ============================
+  user.phone = phone;
+
+  user.studentData.year = yearDoc._id;
+  user.studentData.semester = semesterDoc._id;
+
+  user.profileImg = profileImg;
+  user.universityCardImg = universityCardImg;
+
+  user.profileCompleted = true;
+  user.signupStatus = "profile_completed";
+
+  await user.save();
+
+  res.status(200).json({
+    status: "success",
+    message: "Profile completed successfully",
+  });
+});
+
+
+// ======================================================================
+// ADMIN APPROVAL — APPROVE USER
+// ======================================================================
+
+// ------------------------------------------------------
+// @desc    Approve a student account
+// @route   POST /api/v1/auth/admin/approve-user/:id
+// @access  Admin
+// ------------------------------------------------------
+
+exports.approveUser = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new ApiError("User not found", 404));
+
+  if (user.approvalStatus === "approved")
+    return next(new ApiError("User already approved", 400));
+
+  user.approvalStatus = "approved";
+  user.signupStatus = "approved";
+  user.isFullyActive = true;
+  user.approvedAt = Date.now();
+
+  await user.save();
+
+  // ============================
+  // SEND APPROVAL EMAIL
+  // ============================
+  await sendEmail({
+    email: user.email,
+    subject: "Your TIC Account Has Been Approved",
+    html: `
+      <h2>Congratulations ${user.name}!</h2>
+      <p>Your account has been <strong>approved</strong> by the administration.</p>
+      <p>You can now log in and access all student features.</p>
+      <br/>
+      <p>Best regards,<br/>TIC Team</p>
+    `,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "User approved successfully",
+  });
+});
+
+// ======================================================================
+// ADMIN APPROVAL — REJECT USER
+// ======================================================================
+
+// ------------------------------------------------------
+// @desc    Reject a student account
+// @route   POST /api/v1/auth/admin/reject-user/:id
+// @access  Admin
+// ------------------------------------------------------
+
+exports.rejectUser = asyncHandler(async (req, res, next) => {
+  const userId = req.params.id;
+  const { reason } = req.body;
+
+  const user = await User.findById(userId);
+  if (!user) return next(new ApiError("User not found", 404));
+
+  if (user.approvalStatus === "rejected")
+    return next(new ApiError("User already rejected", 400));
+
+  user.approvalStatus = "rejected";
+  user.signupStatus = "rejected";
+  user.isFullyActive = false;
+  user.rejectedAt = Date.now();
+  user.approvalNotes = reason || "No reason provided";
+
+  await user.save();
+
+  // ============================
+  // SEND REJECTION EMAIL
+  // ============================
+  await sendEmail({
+    email: user.email,
+    subject: "Your TIC Account Has Been Rejected",
+    html: `
+      <h2>Hello ${user.name},</h2>
+      <p>We regret to inform you that your account has been <strong>rejected</strong>.</p>
+      <p><strong>Reason:</strong> ${reason || "No reason provided"}</p>
+      <p>If you believe this is a mistake, please contact support.</p>
+      <br/>
+      <p>Best regards,<br/>TIC Team</p>
+    `,
+  });
+
+  res.status(200).json({
+    status: "success",
+    message: "User rejected successfully",
+  });
+});
+
+
+
+// ======================================================================
+// RESEND VERIFICATION CODE
+// ======================================================================
+
+exports.resendVerificationCode = asyncHandler(async (req, res, next) => {
+  const { email } = req.body;
+
+  // Check if email exists
+  const user = await User.findOne({ email });
+  if (!user) {
+    return next(new ApiError("No user found with this email", 404));
+  }
+
+  // If email is already verified, no need to resend code
+  if (user.emailVerified === true) {
+    return next(new ApiError("Email already verified", 400));
+  }
+
+  // Generate new verification code
+  const newCode = Math.floor(100000 + Math.random() * 900000).toString();
+
+  // Update user verification code and expiration time
+  user.emailVerificationCode = newCode;
+  user.emailVerificationExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
+  await user.save();
+
+  // Send verification email
+  try {
+    await sendEmail({
+      to: user.email,
+      subject: "Your new verification code",
+      html: `
+        <div style="font-family: Arial; padding: 20px;">
+          <h2>Email Verification</h2>
+          <p>Your new verification code is:</p>
+          <h1>${newCode}</h1>
+          <p>This code is valid for 10 minutes.</p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    return next(new ApiError("Failed to send verification email", 500));
+  }
+
+  // Response
+  res.status(200).json({
+    status: "success",
+    message: "A new verification code has been sent to your email",
+  });
+});
+
+
+// ======================================================================
+// AUTH: STUDENT SIGNUP
+// ======================================================================
+
+// // ------------------------------------------------------
+// // @desc    Student Signup
+// // @route   POST /api/v1/auth/signup
+// // @access  Public
+// // ------------------------------------------------------
+// exports.signup = asyncHandler(async (req, res, next) => {
+//   const { name, email, password, studentNumber, year, semester } = req.body;
+
+//   // Check if email already exists
+//   const existingUser = await User.findOne({ email });
+//   if (existingUser) {
+//     return res.status(400).json({
+//       status: "fail",
+//       message: "Email already in use",
+//     });
+//   }
+
+//   // Create student account
+//   const student = await User.create({
+//     name,
+//     email,
+//     password,
+//     role: "student",
+//     studentData: {
+//       studentNumber,
+//       year,
+//       semester,
+//     },
+//   });
+
+//   // ============================
+//   // Generate refresh token + fingerprint
+//   // ============================
+//   const refreshToken = crypto.randomBytes(40).toString("hex");
+//   const fingerprint = refreshToken.slice(0, 12);
+//   const refreshTokenHash = await bcrypt.hash(refreshToken, 12);
+
+//   // Normalize user agent + IP
+//   const normalizedUA = req.headers["user-agent"] || "unknown";
+//   const ip = req.ip || req.connection.remoteAddress;
+
+//   // ============================
+//   // Create Session
+//   // ============================
+//   await UserSession.create({
+//     user: student._id,
+//     refreshTokenHash,
+//     fingerprint,
+//     userAgent: normalizedUA,
+//     ip,
+//     lastUsedAt: new Date(),
+//     expiresAt: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // 30 days
+//   });
+
+//   // Set cookie
+//   exports.setRefreshTokenCookie(res, refreshToken);
+
+//   // Access token
+//   const accessToken = createAccessToken(student._id);
+
+//   student.password = undefined;
+
+//   res.status(201).json({
+//     status: "success",
+//     message: "Signup successful",
+//     data: student,
+//     token: accessToken,
+//   });
+// });
 
 // ======================================================================
 // AUTH: ADMIN SIGNUP
@@ -370,7 +903,7 @@ const newSession = await UserSession.create({
 // ------------------------------------------------------
 // @desc    Create Admin (one-time setup)
 // @route   POST /api/v1/auth/adminSignup
-// @access  Public (should be removed after first use)
+// @access  Public
 // ------------------------------------------------------
 exports.AdminSignup = asyncHandler(async (req, res, next) => {
   const adminUser = await User.create({
@@ -382,7 +915,14 @@ exports.AdminSignup = asyncHandler(async (req, res, next) => {
 
   const accessToken = createAccessToken(adminUser._id);
   const refreshToken = createRefreshToken(adminUser._id);
- await exports.createSession(adminUser._id, refreshToken, req);
+
+  // FIX: Add fingerprint automatically
+  const fingerprint = req.headers["user-agent"] || "admin-setup";
+
+  await exports.createSession(adminUser._id, refreshToken, {
+    ...req,
+    fingerprint,
+  });
 
   exports.setRefreshTokenCookie(res, refreshToken);
 
@@ -429,6 +969,8 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
     { expiresIn: process.env.JWT_REFRESH_EXPIRES_IN }
   );
 
+  const fingerprint = refreshToken.slice(0, 12);
+
   const userAgent = req.headers["user-agent"] || "Unknown Device";
   const ip =
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
@@ -441,6 +983,7 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
   await UserSession.create({
     user: admin._id,
     refreshTokenHash,
+    fingerprint,
     userAgent,
     ip,
     expiresAt: new Date(
@@ -450,8 +993,8 @@ exports.Adminlogin = asyncHandler(async (req, res, next) => {
     ),
   });
 
-await exports.checkNewDeviceAndSendAlert(admin._id, userAgent, ip, req);
 
+  await exports.checkNewDeviceAndSendAlert(admin._id, userAgent, ip, req);
 
   res.cookie("refreshToken", refreshToken, {
     httpOnly: true,
@@ -471,6 +1014,7 @@ await exports.checkNewDeviceAndSendAlert(admin._id, userAgent, ip, req);
     token: accessToken,
   });
 });
+
 
 
 // ======================================================================
@@ -669,13 +1213,14 @@ exports.refreshToken = asyncHandler(async (req, res, next) => {
   logger.info("Refresh: new session created", {
     meta: {
       userId: payload.userId,
-      sessionId: newSession.insertedId,
+      sessionId: newSession._id,
       correlationId: req.correlationId
     }
   });
 
   // 8) Set new cookie
-  setRefreshTokenCookie(res, newRefreshToken);
+module.exports.setRefreshTokenCookie(res, newRefreshToken);
+
 
   logger.info("Refresh token successful", {
     meta: {
@@ -1528,5 +2073,5 @@ exports.googleInitService = asyncHandler(async (req, res, next) => {
     status: "success",
     url: googleAuthUrl,
   });
-  
+
 });

@@ -1,0 +1,213 @@
+[
+  {
+    "name": "Dr. Ahmad Al-Hassan",
+    "slug": "dr-ahmad-al-hassan",
+    "email": "ahmad.hassan@example.com",
+    "phone": "0991000001",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Internal Medicine",
+      "academicTitle": "Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Lina Al-Khatib",
+    "slug": "dr-lina-al-khatib",
+    "email": "lina.khatib@example.com",
+    "phone": "0991000002",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Pharmacology",
+      "academicTitle": "Assistant Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Samer Al-Rifai",
+    "slug": "dr-samer-al-rifai",
+    "email": "samer.rifai@example.com",
+    "phone": "0991000003",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Anatomy",
+      "academicTitle": "Lecturer",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Nour Al-Sabbagh",
+    "slug": "dr-nour-al-sabbagh",
+    "email": "nour.sabbagh@example.com",
+    "phone": "0991000004",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Biochemistry",
+      "academicTitle": "Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Rami Al-Halabi",
+    "slug": "dr-rami-al-halabi",
+    "email": "rami.halabi@example.com",
+    "phone": "0991000005",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Pathology",
+      "academicTitle": "Associate Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Hala Al-Masri",
+    "slug": "dr-hala-al-masri",
+    "email": "hala.masri@example.com",
+    "phone": "0991000006",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Microbiology",
+      "academicTitle": "Lecturer",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Omar Al-Sheikh",
+    "slug": "dr-omar-al-sheikh",
+    "email": "omar.sheikh@example.com",
+    "phone": "0991000007",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Surgery",
+      "academicTitle": "Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Dana Al-Hamwi",
+    "slug": "dr-dana-al-hamwi",
+    "email": "dana.hamwi@example.com",
+    "phone": "0991000008",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Pediatrics",
+      "academicTitle": "Assistant Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Basel Al-Qadi",
+    "slug": "dr-basel-al-qadi",
+    "email": "basel.qadi@example.com",
+    "phone": "0991000009",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Neurology",
+      "academicTitle": "Lecturer",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Yara Al-Tahan",
+    "slug": "dr-yara-al-tahan",
+    "email": "yara.tahan@example.com",
+    "phone": "0991000010",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Dermatology",
+      "academicTitle": "Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Fadi Al-Kurdi",
+    "slug": "dr-fadi-al-kurdi",
+    "email": "fadi.kurdi@example.com",
+    "phone": "0991000011",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Orthopedics",
+      "academicTitle": "Associate Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Rasha Al-Hassan",
+    "slug": "dr-rasha-al-hassan",
+    "email": "rasha.hassan@example.com",
+    "phone": "0991000012",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Cardiology",
+      "academicTitle": "Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Majd Al-Barazi",
+    "slug": "dr-majd-al-barazi",
+    "email": "majd.barazi@example.com",
+    "phone": "0991000013",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Radiology",
+      "academicTitle": "Lecturer",
+      "subjects": [],
+      "lectures": []
+    }
+  },
+  {
+    "name": "Dr. Tarek Al-Saadi",
+    "slug": "dr-tarek-al-saadi",
+    "email": "tarek.saadi@example.com",
+    "phone": "0991000014",
+    "password": "Pass123@456",
+    "role": "doctor",
+    "provider": "local",
+    "doctorData": {
+      "specialization": "Emergency Medicine",
+      "academicTitle": "Assistant Professor",
+      "subjects": [],
+      "lectures": []
+    }
+  }
+]
+

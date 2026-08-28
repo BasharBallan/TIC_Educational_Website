@@ -11,6 +11,10 @@ const userSessionSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    fingerprint: {
+      type: String,
+      required: true,
+    },
     userAgent: String,
     ip: String,
     location: {

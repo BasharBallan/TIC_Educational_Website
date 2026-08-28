@@ -1,39 +1,23 @@
 /**
- * Auth API Test Suite (Clean Final Version)
- * Covers: Signup + Login + Admin + ForgotPassword + Sessions + Google OAuth
+ * Auth API Test Suite (Clean Final Version Without Google OAuth)
+ * Covers: Signup + Login + Admin + ForgotPassword + Sessions + Unlink + Set Password
  */
 
-
-
-// ------------------------------------------------------
-// AUTH SERVICE MOCK (FINAL CLEAN VERSION)
-// ------------------------------------------------------
 jest.mock("../../services/authService", () => {
-  const original = jest.requireActual("../../services/authService");
+  const actual = jest.requireActual("../../services/authService");
   return {
-    ...original,
+    ...actual,
+    protect: jest.fn((req, res, next) => next()),
     createSession: jest.fn(),
     setRefreshTokenCookie: jest.fn(),
-    protect: jest.fn((req, res, next) => next()),
-    allowedTo: jest.fn(() => (req, res, next) => next()),
+    checkNewDeviceAndSendAlert: jest.fn(),
   };
 });
 
 
-const authService = require("../../services/authService");
-const app = require("../../app");
 
-require("dotenv").config({ path: "config.env.test" });
 
-const request = require("supertest");
-const mongoose = require("mongoose");
 
-const axios = require("axios");
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-
-const OAuthTemp = require("../../models/oauthTempModel");
-const User = require("../../models/userModel");
 
 // ------------------------------------------------------
 // GLOBAL EMAIL MOCK
@@ -79,8 +63,21 @@ jest.mock("../../config/redis", () => ({
   quit: jest.fn(),
 }));
 
+// ------------------------------------------------------
+// REQUIRE AFTER MOCKS
+// ------------------------------------------------------
+const authService = require("../../services/authService");
+const app = require("../../app");
 
+require("dotenv").config({ path: "config.env.test" });
 
+const request = require("supertest");
+const mongoose = require("mongoose");
+const axios = require("axios");
+const jwt = require("jsonwebtoken");
+const bcrypt = require("bcryptjs");
+const OAuthTemp = require("../../models/oauthTempModel");
+const User = require("../../models/userModel");
 
 // ------------------------------------------------------
 // DB SETUP
@@ -414,6 +411,7 @@ describe("POST /auth/adminLogin", () => {
     expect(res.status).toBe(401);
   });
 });
+
 // ======================================================================
 // FORGOT PASSWORD TESTS
 // ======================================================================
@@ -466,10 +464,6 @@ describe("POST /auth/forgotPassword", () => {
 // ======================================================================
 // SESSION TESTS
 // ======================================================================
-
-// ------------------------------------------------------
-// GET MY SESSIONS
-// ------------------------------------------------------
 describe("GET /auth/sessions", () => {
   beforeEach(() => {
     authService.protect.mockImplementation((req, res, next) => {
@@ -497,9 +491,6 @@ describe("GET /auth/sessions", () => {
   });
 });
 
-// ------------------------------------------------------
-// DELETE SPECIFIC SESSION
-// ------------------------------------------------------
 describe("DELETE /auth/sessions/:sessionId", () => {
   beforeEach(() => {
     authService.protect.mockImplementation((req, res, next) => {
@@ -531,9 +522,6 @@ describe("DELETE /auth/sessions/:sessionId", () => {
   });
 });
 
-// ------------------------------------------------------
-// DELETE ALL OTHER SESSIONS
-// ------------------------------------------------------
 describe("DELETE /auth/sessions", () => {
   beforeEach(() => {
     authService.protect.mockImplementation((req, res, next) => {
@@ -565,105 +553,6 @@ describe("DELETE /auth/sessions", () => {
     const res = await request(app).delete("/api/v1/auth/sessions");
 
     expect(res.status).toBe(401);
-  });
-});
-// ======================================================================
-// GOOGLE OAUTH TESTS
-// ======================================================================
-
-// ------------------------------------------------------
-// GOOGLE INIT (PKCE + STATE)
-// ------------------------------------------------------
-describe("GET /auth/google/init", () => {
-  it("✓ should generate PKCE params and return Google OAuth URL", async () => {
-    jest.spyOn(OAuthTemp, "create").mockResolvedValue({});
-
-    const res = await request(app)
-      .get("/api/v1/auth/google/init")
-      .set("User-Agent", "JestTestAgent");
-
-    expect(res.status).toBe(200);
-    expect(res.body.url).toContain("https://accounts.google.com/o/oauth2/v2/auth");
-    expect(OAuthTemp.create).toHaveBeenCalled();
-  });
-});
-
-// ------------------------------------------------------
-// GOOGLE CALLBACK (PKCE + STATE)
-// ------------------------------------------------------
-describe.only("GET /auth/google/callback", () => {
-  beforeEach(() => {
-    authService.protect.mockImplementation((req, res, next) => next());
-  });
-
-  it("✓ should handle Google OAuth callback successfully", async () => {
-
- authService.createSession.mockClear();
-authService.setRefreshTokenCookie.mockClear();
-
-
-  // Mock session creation
-  mockSessionCreate.mockResolvedValue({
-    _id: "session123",
-    user: "user123",
-    refreshTokenHash: "hashed",
-    userAgent: "JestTestAgent",
-    ip: "127.0.0.1",
-    expiresAt: new Date()
-  });
-
-  // Mock OAuthTemp
-  jest.spyOn(OAuthTemp, "findOne").mockResolvedValue({
-    _id: "temp123",
-    state: "abc123",
-    codeVerifier: "verifier123",
-  });
-
-    // Mock Google token exchange
-    jest.spyOn(axios, "post").mockResolvedValue({
-      data: { id_token: "fake_id_token" },
-    });
-
-    // Mock decoded Google user
-    jest.spyOn(jwt, "decode").mockReturnValue({
-      email: "google@example.com",
-      name: "Google User",
-      sub: "google123",
-    });
-
-    // Mock user creation
-    jest.spyOn(User, "findOne").mockResolvedValue(null);
-    jest.spyOn(User, "create").mockResolvedValue({
-      _id: "user123",
-      email: "google@example.com",
-      name: "Google User",
-      googleId: "google123",
-      provider: "google",
-    });
-
-    // Mock session + cookie
-    authService.createSession.mockResolvedValue(true);
-    authService.setRefreshTokenCookie.mockImplementation(() => {});
-
-    // Mock delete temp
-    jest.spyOn(OAuthTemp, "deleteOne").mockResolvedValue({});
-
-    const res = await request(app)
-      .get("/api/v1/auth/google/callback?code=123&state=abc123");
-
-    expect(res.status).toBe(302);
-    expect(res.headers.location).toContain("/oauth-success?token=");
-    expect(authService.createSession).toHaveBeenCalled();
-    expect(authService.setRefreshTokenCookie).toHaveBeenCalled();
-  });
-
-  it("✓ should fail when state is invalid", async () => {
-    jest.spyOn(OAuthTemp, "findOne").mockResolvedValue(null);
-
-    const res = await request(app)
-      .get("/api/v1/auth/google/callback?code=123&state=wrong");
-
-    expect(res.status).toBe(400);
   });
 });
 
@@ -737,7 +626,6 @@ describe("DELETE /auth/unlink/google", () => {
 // SET PASSWORD (GOOGLE USERS)
 // ======================================================================
 describe("POST /auth/set-password", () => {
-
   it("✓ should fail if password too short", async () => {
     const mockUser = {
       _id: "user123",

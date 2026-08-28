@@ -1,17 +1,20 @@
 import axios from "axios";
 
-// Create a reusable Axios instance for all API requests
 const api = axios.create({
-  // Base URL for the backend API
   baseURL: "http://localhost:8000/api/v1",
-
-  // Allow sending cookies and authentication data with requests
   withCredentials: true,
-
-  // Default headers for all requests
   headers: {
     "Content-Type": "application/json",
   },
+});
+
+// Inject access token automatically
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem("accessToken");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
 });
 
 export default api;

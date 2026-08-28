@@ -1,0 +1,811 @@
+🟩 الأسبوع الأول — Frontend Awareness (موزون، غير ضاغط)
+الهدف: فهم الواجهة وربطها مع الـ backend بدون ما تصير Frontend Developer.
+🔵 1.1 React Basics
+React Components
+
+State & Hooks
+
+Props
+
+🔵 1.2 Auth Flow
+تسجيل الدخول
+
+حفظ الـ access token
+
+إرسال الـ refresh token
+
+حماية الصفحات
+
+🔵 1.3 استهلاك API
+Axios instance
+
+Error handling
+
+Pagination + Filters
+
+🔵 1.4 رفع الملفات من الواجهة
+FormData
+
+Progress bar
+
+Preview
+
+🔵 1.5 بناء واجهة بسيطة لمشروعك
+Login
+
+Subjects
+
+Lectures
+
+Lecture details
+
+هذا الأسبوع خفيف نسبياً، مناسب كبداية.
+
+🟩 الأسبوع الثاني — Socket.IO Real‑Time (أسبوع متوسط الضغط)
+الهدف: إضافة تفاعل حي داخل مشروعك.
+🔵 2.1 Socket.IO Setup
+Client + Server
+
+Events
+
+Rooms
+
+🔵 2.2 Notifications
+إشعار عند رفع محاضرة
+
+إشعار عند تحديث محاضرة
+
+إشعار عند حذف محاضرة
+
+إشعار عند إضافة مادة
+
+🔵 2.3 Chat بسيط
+Doctor ↔ Student
+
+Typing indicator
+
+Online/offline presence
+
+🔵 2.4 Redis Adapter
+دعم التوسّع
+
+دعم multi‑instance
+
+هذا الأسبوع متوسط، فيه شغل ممتع ونتائجه واضحة.
+
+🟩 الأسبوع الثالث — Cloud Storage + Deployment (أسبوع قوي لكن موزون)
+الهدف: رفع مشروعك إلى مستوى الشركات.
+🔵 3.1 Cloud Storage
+اختيار AWS S3 أو Cloudinary
+
+رفع الملفات
+
+signed URLs
+
+private buckets
+
+CDN
+
+🔵 3.2 Deployment
+Nginx
+
+Reverse proxy
+
+HTTPS
+
+PM2
+
+رفع المشروع على:
+
+Railway
+
+Render
+
+أو AWS
+
+🔵 3.3 تحسين Logging في الإنتاج
+Winston production logs
+
+Error tracking
+
+Request tracking
+
+هذا الأسبوع أثقل من الأسبوعين السابقين، لكنه موزون ومناسب لقدراتك.
+
+🟩 الأسبوع الرابع — Docker + Final Integration + Portfolio (أسبوع خفيف نسبيًا)
+الهدف: إنهاء كل شيء وتحضير المشروع للتوظيف.
+🔵 4.1 Docker
+Dockerfile
+
+Docker Compose
+
+تشغيل:
+
+Backend
+
+Mongo
+
+Redis
+
+RabbitMQ
+
+🔵 4.2 Final Integration
+ربط React + Backend
+
+ربط Socket.IO + Notifications
+
+ربط Cloud Storage + Lectures
+
+تشغيل المشروع كامل داخل Docker
+
+🔵 4.3 Portfolio + CV
+صور المشروع
+
+صور الـ UML
+
+README احترافي
+
+تحديث CV
+
+تحديث LinkedIn
+
+رفع المشروع على GitHub
+
+
+🟩 الأسبوع الأول — Frontend Awareness (خطة يومية)
+🎯 الهدف العام للأسبوع
+تفهم React بشكل عملي، تبني واجهة بسيطة لمشروعك، وتربطها مع الـ backend.
+
+🟦 اليوم 1 — فهم React بشكل صحيح
+🎯 الهدف: تأسيس قوي بدون تعقيد
+🔵 المهام الرئيسية
+React Components
+
+State & Hooks
+
+Props
+
+🔵 المهام الفرعية
+إنشاء مشروع React
+
+فهم JSX
+
+بناء 3 Components بسيطة
+
+استخدام useState
+
+استخدام useEffect
+
+🔵 المهام الداخلية
+Counter component
+
+Toggle component
+
+Fetch dummy data من JSON placeholder
+
+🟦 اليوم 2 — Routing + Structure
+🎯 الهدف: تنظيم الواجهة مثل مشروع حقيقي
+🔵 المهام الرئيسية
+React Router
+
+Folder Structure
+
+🔵 المهام الفرعية
+إنشاء صفحات:
+
+Login
+
+Subjects
+
+Lectures
+
+Lecture Details
+
+🔵 المهام الداخلية
+إضافة Navbar بسيط
+
+حماية الصفحات لاحقاً (اليوم 4)
+
+🟦 اليوم 3 — Axios + API Integration
+🎯 الهدف: ربط الواجهة مع مشروعك الحالي
+🔵 المهام الرئيسية
+Axios Instance
+
+Error Handling
+
+🔵 المهام الفرعية
+إنشاء axios instance مع:
+
+baseURL
+
+interceptors
+
+token injection
+
+🔵 المهام الداخلية
+جلب المواد من /subjects
+
+جلب المحاضرات من /lectures
+
+عرض البيانات في الواجهة
+
+🟦 اليوم 4 — Auth Flow كامل
+🎯 الهدف: فهم تسجيل الدخول بشكل احترافي
+🔵 المهام الرئيسية
+Auth Flow Frontend
+
+Protected Routes
+
+🔵 المهام الفرعية
+صفحة تسجيل الدخول
+
+حفظ access token
+
+إرسال refresh token
+
+حماية الصفحات
+
+🔵 المهام الداخلية
+تخزين token في localStorage
+
+إعادة توجيه المستخدم بعد تسجيل الدخول
+
+منع الوصول للصفحات المحمية
+
+🟦 اليوم 5 — رفع الملفات من الواجهة
+🎯 الهدف: ربط رفع الملفات مع مشروعك الحالي
+🔵 المهام الرئيسية
+FormData
+
+Upload Progress
+
+🔵 المهام الفرعية
+رفع ملف محاضرة
+
+عرض progress bar
+
+عرض preview
+
+🔵 المهام الداخلية
+ربط الرفع مع /lectures/upload
+
+عرض رسالة نجاح أو خطأ
+
+🟦 اليوم 6 — UI تحسينات + دمج كامل
+🎯 الهدف: جعل الواجهة قابلة للاستخدام
+🔵 المهام الرئيسية
+UI Polishing
+
+🔵 المهام الفرعية
+تحسين صفحات:
+
+Login
+
+Subjects
+
+Lectures
+
+Lecture Details
+
+🔵 المهام الداخلية
+إضافة Loader
+
+إضافة Error component
+
+إضافة Empty state
+
+🟦 اليوم 7 — مراجعة + تثبيت + توثيق
+🎯 الهدف: تثبيت كل شيء قبل الانتقال للأسبوع الثاني
+🔵 المهام الرئيسية
+Review Week 1
+
+🔵 المهام الفرعية
+مراجعة الكود
+
+تنظيف الملفات
+
+توثيق الواجهة
+
+كتابة ملاحظات الأسبوع
+
+🔵 المهام الداخلية
+تجهيز الواجهة للـ Socket.IO (الأسبوع الثاني)
+
+تجهيز الواجهة للـ Cloud Storage (الأسبوع الثالث)
+
+
+
+
+
+
+🟩 الأسبوع الثاني — Socket.IO Real‑Time (خطة يومية)
+🎯 الهدف العام للأسبوع
+إضافة نظام تفاعلي كامل داخل مشروعك: إشعارات، Chat، Presence، Redis Adapter.
+
+🟦 اليوم 1 — تأسيس Socket.IO داخل مشروعك
+🎯 الهدف: تشغيل Socket.IO بشكل نظيف داخل مشروعك الحالي
+🔵 المهام الرئيسية
+Socket.IO Connection
+
+Emit/On Events
+
+🔵 المهام الفرعية
+إضافة socket server داخل مشروعك
+
+ربطه مع الـ Express
+
+إنشاء ملف خاص لإدارة الـ events
+
+🔵 المهام الداخلية
+حدث connection
+
+حدث disconnect
+
+اختبار الاتصال من الواجهة
+
+🟦 اليوم 2 — بناء نظام إشعارات Real‑Time
+🎯 الهدف: إشعارات فورية عند أي حدث مهم
+🔵 المهام الرئيسية
+Real‑Time Notifications
+
+🔵 المهام الفرعية
+إشعارات عند:
+
+رفع محاضرة جديدة
+
+تحديث محاضرة
+
+حذف محاضرة
+
+إضافة مادة جديدة
+
+🔵 المهام الداخلية
+بناء event: lecture:new
+
+بناء event: lecture:update
+
+بناء event: lecture:delete
+
+استقبال الإشعار في الواجهة
+
+🟦 اليوم 3 — بناء Chat بسيط بين الطالب والدكتور
+🎯 الهدف: Chat عملي داخل مشروعك
+🔵 المهام الرئيسية
+Socket.IO Rooms
+
+Typing Indicator
+
+🔵 المهام الفرعية
+إنشاء غرفة لكل محاضرة أو لكل Doctor–Student
+
+إرسال الرسائل
+
+استقبال الرسائل
+
+عرض typing indicator
+
+🔵 المهام الداخلية
+event: chat:message
+
+event: chat:typing
+
+event: chat:stopTyping
+
+🟦 اليوم 4 — Online/Offline Presence
+🎯 الهدف: معرفة من المتصل الآن
+🔵 المهام الرئيسية
+Online/Offline Presence
+
+🔵 المهام الفرعية
+حفظ حالة المستخدم عند الاتصال
+
+حفظ حالة المستخدم عند الانفصال
+
+إرسال حالة المستخدم للواجهة
+
+🔵 المهام الداخلية
+event: user:online
+
+event: user:offline
+
+عرض الحالة في الواجهة
+
+🟦 اليوم 5 — Redis Adapter (للتوسّع الحقيقي)
+🎯 الهدف: جعل Socket.IO قابل للتوسّع مثل الشركات
+🔵 المهام الرئيسية
+Redis Adapter
+
+🔵 المهام الفرعية
+تثبيت redis adapter
+
+ربطه مع socket server
+
+اختبار العمل على أكثر من instance
+
+🔵 المهام الداخلية
+تشغيل Redis
+
+ربطه مع Socket.IO
+
+اختبار broadcast بين أكثر من instance
+
+🟦 اليوم 6 — دمج كامل مع الواجهة
+🎯 الهدف: ربط كل شيء مع React
+🔵 المهام الرئيسية
+Real‑Time UI
+
+🔵 المهام الفرعية
+عرض الإشعارات
+
+عرض الرسائل
+
+عرض حالة المستخدم
+
+عرض typing indicator
+
+🔵 المهام الداخلية
+بناء Notification component
+
+بناء Chat component
+
+بناء Presence component
+
+🟦 اليوم 7 — مراجعة + تنظيف + توثيق
+🎯 الهدف: تثبيت كل شيء قبل الانتقال للأسبوع الثالث
+🔵 المهام الرئيسية
+Review Week 2
+
+🔵 المهام الفرعية
+تنظيف الكود
+
+تنظيم ملفات الـ socket
+
+كتابة توثيق داخلي
+
+اختبار كل الـ flows
+
+🔵 المهام الداخلية
+تجهيز المشروع للـ Cloud Storage (الأسبوع الثالث)
+
+تجهيز المشروع للـ Deployment (الأسبوع الثالث)
+
+
+
+
+
+
+🟩 الأسبوع الثالث — Cloud Storage + Deployment (خطة يومية)
+🎯 الهدف العام
+تحويل مشروعك إلى منصة تعمل على سيرفر حقيقي، مع رفع ملفات سحابي، HTTPS، Nginx، PM2، وبيئة إنتاج كاملة.
+
+🟦 اليوم 1 — اختيار Cloud Storage + تهيئة البيئة
+🎯 الهدف: اختيار الخدمة المناسبة وتهيئة المشروع لاستقبال التخزين السحابي
+🔵 المهام الرئيسية
+AWS S3 Overview
+
+Cloudinary Overview
+
+🔵 المهام الفرعية
+اختيار الخدمة المناسبة
+
+إنشاء حساب
+
+إنشاء bucket أو cloud space
+
+إعداد الـ environment variables
+
+🔵 المهام الداخلية
+CLOUD_KEY
+
+CLOUD_SECRET
+
+CLOUD_BUCKET
+
+CLOUD_REGION
+
+🟦 اليوم 2 — رفع الملفات إلى Cloud Storage
+🎯 الهدف: استبدال رفع الملفات المحلي برفع سحابي
+🔵 المهام الرئيسية
+Signed URLs
+
+Secure Upload
+
+🔵 المهام الفرعية
+رفع محاضرات
+
+رفع صور المواد
+
+رفع صور المستخدمين
+
+🔵 المهام الداخلية
+بناء خدمة رفع الملفات
+
+بناء route للرفع
+
+اختبار الرفع من Postman
+
+عرض رابط الملف السحابي
+
+🟦 اليوم 3 — دمج الرفع السحابي مع الواجهة
+🎯 الهدف: ربط React مع Cloud Storage
+🔵 المهام الرئيسية
+Frontend File Upload
+
+🔵 المهام الفرعية
+رفع الملف من الواجهة
+
+عرض progress bar
+
+عرض preview
+
+عرض رابط الملف السحابي
+
+🔵 المهام الداخلية
+تعديل axios instance
+
+إرسال FormData
+
+استقبال رابط الملف
+
+🟦 اليوم 4 — Nginx Reverse Proxy
+🎯 الهدف: تشغيل مشروعك خلف Nginx مثل الشركات
+🔵 المهام الرئيسية
+Nginx Reverse Proxy
+
+Nginx Config
+
+🔵 المهام الفرعية
+تثبيت Nginx
+
+إعداد ملف config
+
+توجيه الطلبات للـ backend
+
+توجيه الطلبات للـ frontend
+
+🔵 المهام الداخلية
+إعداد /etc/nginx/sites-available/app
+
+تفعيل الموقع
+
+إعادة تشغيل Nginx
+
+🟦 اليوم 5 — HTTPS + SSL
+🎯 الهدف: تأمين مشروعك بشهادة SSL
+🔵 المهام الرئيسية
+HTTPS Setup
+
+🔵 المهام الفرعية
+الحصول على شهادة SSL
+
+إعداد Nginx للـ HTTPS
+
+إعادة توجيه HTTP → HTTPS
+
+🔵 المهام الداخلية
+اختبار الاتصال الآمن
+
+التأكد من عدم وجود mixed content
+
+🟦 اليوم 6 — PM2 + تشغيل المشروع في الإنتاج
+🎯 الهدف: تشغيل مشروعك مثل الشركات
+🔵 المهام الرئيسية
+PM2
+
+PM2 Monitoring
+
+🔵 المهام الفرعية
+تشغيل المشروع عبر PM2
+
+مراقبة المشروع
+
+إعادة التشغيل التلقائي
+
+إدارة الـ logs
+
+🔵 المهام الداخلية
+pm2 start app.js
+
+pm2 logs
+
+pm2 monit
+
+🟦 اليوم 7 — رفع المشروع على سيرفر + مراجعة
+🎯 الهدف: رفع المشروع بالكامل على سيرفر حقيقي
+🔵 المهام الرئيسية
+Railway Deployment
+
+Render Deployment
+
+🔵 المهام الفرعية
+رفع backend
+
+رفع frontend
+
+ربطهما مع Nginx
+
+اختبار كل الـ flows
+
+🔵 المهام الداخلية
+اختبار رفع الملفات
+
+اختبار الإشعارات
+
+اختبار الـ Auth
+
+اختبار الـ Sessions
+
+
+
+
+
+🟩 الأسبوع الرابع — Docker + Final Integration + Portfolio (خطة يومية)
+🎯 الهدف العام
+تشغيل مشروعك كامل داخل Docker، دمج كل الأنظمة، وتحضير المشروع للعرض المهني.
+
+🟦 اليوم 1 — فهم Docker بشكل صحيح
+🎯 الهدف: تأسيس قوي بدون تعقيد
+🔵 المهام الرئيسية
+Dockerfile Basics
+
+Docker Images
+
+**Docker Containers****
+
+🔵 المهام الفرعية
+تثبيت Docker
+
+فهم build → image → container
+
+تشغيل container بسيط
+
+🔵 المهام الداخلية
+docker build
+
+docker run
+
+docker ps
+
+docker logs
+
+🟦 اليوم 2 — بناء Dockerfile لمشروعك
+🎯 الهدف: تشغيل الـ backend داخل Docker
+🔵 المهام الرئيسية
+Create Dockerfile
+
+🔵 المهام الفرعية
+إعداد base image
+
+تثبيت dependencies
+
+نسخ المشروع
+
+تشغيل المشروع داخل container
+
+🔵 المهام الداخلية
+FROM node:18
+
+COPY . .
+
+RUN npm install
+
+CMD ["npm", "start"]
+
+🟦 اليوم 3 — Docker Compose
+🎯 الهدف: تشغيل كل الخدمات معاً
+🔵 المهام الرئيسية
+Docker Compose
+
+🔵 المهام الفرعية
+تشغيل:
+
+Backend
+
+MongoDB
+
+Redis
+
+RabbitMQ
+
+🔵 المهام الداخلية
+إعداد docker-compose.yml
+
+ربط الخدمات ببعض
+
+اختبار الاتصال بين الخدمات
+
+🟦 اليوم 4 — Integration كامل للمشروع
+🎯 الهدف: ربط كل شيء ببعضه داخل Docker
+🔵 المهام الرئيسية
+Full Integration
+
+🔵 المهام الفرعية
+ربط React مع backend
+
+ربط Socket.IO مع الواجهة
+
+ربط Cloud Storage مع الرفع
+
+ربط Redis Adapter داخل Docker
+
+🔵 المهام الداخلية
+اختبار رفع الملفات
+
+اختبار الإشعارات
+
+اختبار الـ chat
+
+اختبار الـ presence
+
+🟦 اليوم 5 — تحسين الأداء + Logging إنتاجي
+🎯 الهدف: جعل المشروع جاهز للإنتاج الحقيقي
+🔵 المهام الرئيسية
+Production Logging
+
+🔵 المهام الفرعية
+تحسين Winston
+
+إضافة request tracking
+
+إضافة error tracking
+
+تحسين rate limiting
+
+🔵 المهام الداخلية
+إضافة metadata
+
+إضافة userId للـ logs
+
+إضافة IP للـ logs
+
+🟦 اليوم 6 — Portfolio + README احترافي
+🎯 الهدف: تجهيز المشروع للعرض أمام الشركات
+🔵 المهام الرئيسية
+Portfolio
+
+README Professional
+
+🔵 المهام الفرعية
+إضافة صور المشروع
+
+إضافة صور الـ UML
+
+إضافة صور الـ Docker
+
+كتابة شرح كامل للمشروع
+
+🔵 المهام الداخلية
+إضافة Features
+
+إضافة Tech Stack
+
+إضافة Architecture Diagram
+
+إضافة API Examples
+
+🟦 اليوم 7 — CV + LinkedIn + GitHub
+🎯 الهدف: تجهيزك للتوظيف بألمانيا
+🔵 المهام الرئيسية
+CV ألماني
+
+LinkedIn
+
+GitHub
+
+🔵 المهام الفرعية
+تحديث CV
+
+تحديث LinkedIn
+
+رفع المشروع على GitHub
+
+كتابة وصف احترافي للمشروع
+
+🔵 المهام الداخلية
+إضافة Skills
+
+إضافة Projects
+
+إضافة Experience (مشروعك يعتبر خبرة)
+
+

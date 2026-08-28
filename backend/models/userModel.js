@@ -3,6 +3,9 @@ const bcrypt = require("bcryptjs");
 
 const userSchema = new mongoose.Schema(
   {
+    // ===========================
+    // BASIC USER INFO
+    // ===========================
     name: {
       type: String,
       trim: true,
@@ -26,14 +29,14 @@ const userSchema = new mongoose.Schema(
 
     profileImg: String,
 
-password: {
-  type: String,
-  required: function () {
-    return this.provider === "local";
-  },
-  minlength: [6, "Too short password"],
-}
-,
+    password: {
+      type: String,
+      required: function () {
+        return this.provider === "local";
+      },
+      minlength: [6, "Too short password"],
+    },
+
     passwordChangedAt: Date,
     passwordResetCode: String,
     passwordResetExpires: Date,
@@ -60,17 +63,93 @@ password: {
       default: null,
     },
 
-   provider: {
-  type: String,
-  enum: ["local", "google"],
-  default: "local",
-},
+    provider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
+    },
 
     passwordManuallySet: {
       type: Boolean,
       default: false,
     },
 
+    // ===========================
+    // SIGNUP STATE MACHINE
+    // ===========================
+    signupStatus: {
+      type: String,
+      enum: [
+        "email_submitted",
+        "email_verified",
+        "profile_completed",
+        "pending_approval",
+        "approved",
+        "rejected",
+      ],
+      default: "email_submitted",
+    },
+
+    // ===========================
+    // EMAIL VERIFICATION
+    // ===========================
+    emailVerificationCode: String,
+    emailVerificationExpires: Date,
+    emailVerificationAttempts: {
+      type: Number,
+      default: 0,
+    },
+    lastEmailVerificationRequest: Date,
+    emailVerified: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ===========================
+    // PROFILE COMPLETION
+    // ===========================
+    universityCardImg: String, // student card OR payment receipt
+    profileCompleted: {
+      type: Boolean,
+      default: false,
+    },
+
+
+    // ===========================
+    // ADMIN APPROVAL SYSTEM
+    // ===========================
+    approvalStatus: {
+      type: String,
+      enum: ["pending", "approved", "rejected"],
+      default: "pending",
+    },
+    approvalNotes: String,
+    approvedAt: Date,
+    rejectedAt: Date,
+
+    isFullyActive: {
+      type: Boolean,
+      default: false,
+    },
+
+    // ===========================
+    // OPTIONAL AUDIT & SECURITY
+    // ===========================
+    auditLog: [
+      {
+        action: String,
+        timestamp: Date,
+        ip: String,
+        device: String,
+      },
+    ],
+
+    signupDeviceInfo: String,
+    signupIpAddress: String,
+
+    // ===========================
+    // STUDENT DATA
+    // ===========================
     studentData: {
       studentNumber: { type: Number },
 
@@ -99,6 +178,9 @@ password: {
       ],
     },
 
+    // ===========================
+    // DOCTOR DATA
+    // ===========================
     doctorData: {
       specialization: {
         type: String,
@@ -120,14 +202,34 @@ password: {
       ],
     },
   },
-  { timestamps: true },
+  { timestamps: true }
 );
 
+// ===========================
+// PASSWORD HASHING
+// ===========================
 userSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
-  // Hashing user password
   this.password = await bcrypt.hash(this.password, 12);
   next();
+});
+
+// ===========================
+// CLEAN JSON OUTPUT
+// ===========================
+userSchema.set("toJSON", {
+  transform: function (doc, ret) {
+    if (ret.role === "doctor") {
+      delete ret.studentData;
+    } else if (ret.role === "student") {
+      delete ret.doctorData;
+    } else {
+      delete ret.studentData;
+      delete ret.doctorData;
+    }
+
+    return ret;
+  },
 });
 
 const User = mongoose.model("User", userSchema);

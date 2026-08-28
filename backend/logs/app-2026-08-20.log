@@ -1,0 +1,14 @@
+{"timestamp":"2026-08-20T18:02:22.768Z","level":"info","message":"⚡ Socket.IO initialized"}
+{"timestamp":"2026-08-20T18:02:22.777Z","level":"info","message":"🚀 Server + Socket.IO running on port 8000"}
+{"timestamp":"2026-08-20T18:02:25.857Z","level":"info","message":"⚡ Socket.IO initialized"}
+{"timestamp":"2026-08-20T18:02:25.863Z","level":"info","message":"🚀 Server + Socket.IO running on port 8000"}
+{"timestamp":"2026-08-20T18:02:32.310Z","level":"info","message":"📦 MongoDB connected successfully"}
+{"timestamp":"2026-08-20T18:11:24.191Z","level":"info","message":"⚡ Socket.IO initialized"}
+{"timestamp":"2026-08-20T18:11:24.201Z","level":"info","message":"🚀 Server + Socket.IO running on port 8000"}
+{"timestamp":"2026-08-20T18:11:32.229Z","level":"info","message":"📦 MongoDB connected successfully"}
+{"timestamp":"2026-08-20T18:15:58.425Z","level":"info","message":"⚡ Socket.IO initialized"}
+{"timestamp":"2026-08-20T18:15:58.438Z","level":"info","message":"🚀 Server + Socket.IO running on port 8000"}
+{"timestamp":"2026-08-20T18:16:01.143Z","level":"info","message":"📦 MongoDB connected successfully"}
+{"timestamp":"2026-08-20T18:16:47.158Z","level":"info","message":"⚡ Socket.IO initialized"}
+{"timestamp":"2026-08-20T18:16:47.171Z","level":"info","message":"🚀 Server + Socket.IO running on port 8000"}
+{"timestamp":"2026-08-20T18:16:50.016Z","level":"info","message":"📦 MongoDB connected successfully"}

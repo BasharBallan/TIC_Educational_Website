@@ -1,17 +1,48 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 
-import Landing from "../pages/Landing";
-import Login from "../pages/Login";
-import Register from "../pages/Register";
+// =======================
+// Auth & Signup Pages
+// =======================
+import Landing from "../features/auth/pages/Landing";
+import Login from "../features/auth/pages/Login";
 
-import MainPage from "../pages/MainPage";
-import Profile from "../pages/Profile";
-import ProfileUpdate from "../pages/ProfileUpdate";
-import ChangePassword from "../pages/ChangePassword";
-import Subjects from "../pages/Subjects";
-import Lectures from "../pages/Lectures";
-import Favorites from "../pages/Favorites";
+// Signup Flow
+import Step1BasicInfo from "../features/auth/pages/signup/Step1BasicInfo";
+import Step2VerifyEmail from "../features/auth/pages/signup/Step2VerifyEmail";
+import Step3CompleteProfile from "../features/auth/pages/signup/Step3CompleteProfile";
+import Step4PendingApproval from "../features/auth/pages/signup/Step4PendingApproval";
+import Step5Rejected from "../features/auth/pages/signup/Step5Rejected";
 
+// =======================
+// Student Pages
+// =======================
+import MainPage from "../features/auth/pages/MainPage";
+import Subjects from "../features/student/pages/Subjects";
+import Lectures from "../features/student/pages/Lectures";
+import Favorites from "../features/student/pages/Favorites";
+import NotificationsPage from "../features/student/pages/NotificationsPage";
+import NotificationSettings from "../features/student/pages/NotificationSettings";
+import SubjectLectures from "../features/student/pages/SubjectLectures";
+
+// =======================
+// Profile Pages
+// =======================
+import Profile from "../features/profile/pages/Profile";
+import ProfileUpdate from "../features/profile/pages/ProfileUpdate";
+import ChangePassword from "../features/profile/pages/ChangePassword";
+
+// =======================
+// Doctor Pages
+// =======================
+import AddLecture from "../features/doctor/pages/AddLecture";
+
+// =======================
+// Admin Pages
+// =======================
+
+// =======================
+// Route Guards
+// =======================
 import ProtectedRoute from "./ProtectedRoute";
 import RoleRoute from "./RoleRoute";
 
@@ -22,11 +53,17 @@ export default function AppRoutes() {
       {/* Public Routes */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Register />} />
 
-      {/* Authenticated Routes (Student + Doctor) */}
+      {/* Signup Flow */}
+      <Route path="/auth/signup/basic-info" element={<Step1BasicInfo />} />
+      <Route path="/auth/signup/verify-email" element={<Step2VerifyEmail />} />
+      <Route path="/auth/signup/complete-profile" element={<Step3CompleteProfile />} />
+      <Route path="/auth/signup/pending-approval" element={<Step4PendingApproval />} />
+      <Route path="/auth/signup/rejected" element={<Step5Rejected />} />
+
+      {/* Authenticated Routes */}
       <Route
-        path="/main"
+        path="/mainpage"
         element={
           <ProtectedRoute>
             <MainPage />
@@ -44,7 +81,7 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/profile-update"
+        path="/profile/update"
         element={
           <ProtectedRoute>
             <ProfileUpdate />
@@ -53,10 +90,20 @@ export default function AppRoutes() {
       />
 
       <Route
-        path="/updateMyPassword"
+        path="/profile/change-password"
         element={
           <ProtectedRoute>
             <ChangePassword />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Notification Settings */}
+      <Route
+        path="/settings/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationSettings />
           </ProtectedRoute>
         }
       />
@@ -70,9 +117,17 @@ export default function AppRoutes() {
           </RoleRoute>
         }
       />
-
       <Route
         path="/lectures/:subjectId"
+        element={
+          <RoleRoute allowedRoles={["student"]}>
+            <SubjectLectures />
+          </RoleRoute>
+        }
+      />
+
+      <Route
+        path="/lectures"
         element={
           <RoleRoute allowedRoles={["student"]}>
             <Lectures />
@@ -89,9 +144,18 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Doctor Only Routes (Future) */}
       <Route
-        path="/doctor-dashboard"
+        path="/notifications"
+        element={
+          <ProtectedRoute>
+            <NotificationsPage />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Doctor Only Routes */}
+      <Route
+        path="/doctor/dashboard"
         element={
           <RoleRoute allowedRoles={["doctor"]}>
             <h1>Doctor Dashboard</h1>
@@ -99,15 +163,16 @@ export default function AppRoutes() {
         }
       />
 
-      {/* Admin Only Routes (Future) */}
       <Route
-        path="/admin-dashboard"
+        path="/addLecture"
         element={
-          <RoleRoute allowedRoles={["admin"]}>
-            <h1>Admin Dashboard</h1>
+          <RoleRoute allowedRoles={["doctor"]}>
+            <AddLecture />
           </RoleRoute>
         }
       />
+
+      {/* Admin Only Routes */}
 
       {/* Fallback */}
       <Route path="*" element={<Navigate to="/" />} />

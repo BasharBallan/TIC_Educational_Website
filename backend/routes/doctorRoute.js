@@ -9,6 +9,7 @@ const {
   createMyLecture,
   updateMyLecture,
   deleteMyLecture,
+  getMySubjects,
 } = require("../services/doctorService");
 
 const {
@@ -27,9 +28,34 @@ const router = express.Router();
  *   description: APIs for doctors to manage their own lectures
  */
 
+router.use(protect, allowedTo("doctor"));
+
 /**
  * @swagger
- * /api/v1/doctors:
+ * /api/v1/doctors/subjects:
+ *   get:
+ *     summary: Get all subjects assigned to the logged-in doctor
+ *     tags: [Doctor Lectures]
+ *     security:
+ *       - bearerAuth: []
+ *     description: Returns all subjects that the authenticated doctor teaches.
+ *     responses:
+ *       200:
+ *         description: Subjects returned successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+ router.get(
+   "/subjects",
+   cache((req) => `subjects:doctor:${req.user._id}`),
+   getMySubjects
+ );
+
+/**
+ * @swagger
+ * /api/v1/doctors/lectures:
  *   get:
  *     summary: Get all lectures created by the logged-in doctor
  *     tags: [Doctor Lectures]
@@ -44,17 +70,15 @@ const router = express.Router();
  *       403:
  *         description: Forbidden
  */
-router.use(protect, allowedTo("doctor"));
-
 router.get(
-  "/",
+  "/lectures",
   cache((req) => `lectures:doctor:${req.user._id}`),
   getMyLectures
 );
 
 /**
  * @swagger
- * /api/v1/doctors:
+ * /api/v1/doctors/lectures:
  *   post:
  *     summary: Create a new lecture (Doctor only)
  *     tags: [Doctor Lectures]
@@ -88,11 +112,16 @@ router.get(
  *       401:
  *         description: Unauthorized
  */
-router.post("/", uploadLectureFile, createMyLectureValidator, createMyLecture);
+router.post(
+  "/lectures",
+  uploadLectureFile,
+  createMyLectureValidator,
+  createMyLecture
+);
 
 /**
  * @swagger
- * /api/v1/doctors/{id}:
+ * /api/v1/doctors/lectures/{id}:
  *   get:
  *     summary: Get a single lecture created by the doctor
  *     tags: [Doctor Lectures]
@@ -115,7 +144,7 @@ router.post("/", uploadLectureFile, createMyLectureValidator, createMyLecture);
  *         description: Unauthorized
  */
 router.get(
-  "/:id",
+  "/lectures/:id",
   getMyLectureValidator,
   cache((req) => `lecture:${req.params.id}`),
   getMyLecture
@@ -123,7 +152,7 @@ router.get(
 
 /**
  * @swagger
- * /api/v1/doctors/{id}:
+ * /api/v1/doctors/lectures/{id}:
  *   put:
  *     summary: Update a lecture created by the doctor
  *     tags: [Doctor Lectures]
@@ -158,11 +187,15 @@ router.get(
  *       401:
  *         description: Unauthorized
  */
-router.put("/:id", updateMyLectureValidator, updateMyLecture);
+router.put(
+  "/lectures/:id",
+  updateMyLectureValidator,
+  updateMyLecture
+);
 
 /**
  * @swagger
- * /api/v1/doctors/{id}:
+ * /api/v1/doctors/lectures/{id}:
  *   delete:
  *     summary: Delete a lecture created by the doctor
  *     tags: [Doctor Lectures]
@@ -183,6 +216,10 @@ router.put("/:id", updateMyLectureValidator, updateMyLecture);
  *       401:
  *         description: Unauthorized
  */
-router.delete("/:id", deleteMyLectureValidator, deleteMyLecture);
+router.delete(
+  "/lectures/:id",
+  deleteMyLectureValidator,
+  deleteMyLecture
+);
 
 module.exports = router;

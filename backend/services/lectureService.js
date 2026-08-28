@@ -1,7 +1,8 @@
+const asyncHandler = require("express-async-handler");
+
 const Lecture = require('../models/lectureModel');
 const factory = require('./handlersFactory');
-const cacheService = require("../services/cacheService");
-const asyncHandler = require("express-async-handler");
+const cacheService = require("./cacheService");
 const ApiError = require("../utils/apiError");
 const Subject = require("../models/subjectModel");
 const logger = require("../utils/logger");
@@ -134,7 +135,7 @@ exports.getMyLectures = asyncHandler(async (req, res, next) => {
     }
   });
 
-  const studentYearId = req.user.yearId;
+  const studentYearId = req.user.studentData.year;
 
   if (!studentYearId) {
     logger.warn("Fetching lectures failed: student year not found", {
@@ -184,6 +185,35 @@ exports.getMyLectures = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
+    results: lectures.length,
+    data: lectures,
+  });
+});
+
+// ======================================================================
+// GET LECTURES BY SUBJECTS
+// ======================================================================
+// @desc    Get  lectures by subjects
+// @route   GET /api/v1/lectures/subject/subjectId
+// @access  Private/Student
+// ======================================================================
+exports.getLecturesBySubject = asyncHandler(async (req, res, next) => {
+  const { subjectId } = req.params;
+
+  const subject = await Subject.findById(subjectId).populate("lectures");
+
+  if (!subject) {
+    return next(new ApiError("Subject not found", 404));
+  }
+
+  const lectures = subject.lectures;
+
+  res.status(200).json({
+    status: "success",
+    subject: {
+      _id: subject._id,
+      name: subject.name,
+    },
     results: lectures.length,
     data: lectures,
   });

@@ -159,3 +159,49 @@ exports.deleteDoctorValidator = [
   check("id").isMongoId().withMessage("Invalid doctor ID format"),
   validatorMiddleware,
 ];
+// ------------------------------------------------------
+// Complete Profile (Student / Doctor)
+// ------------------------------------------------------
+exports.completeProfileValidator = [
+  // ---------------------------
+  // Common fields
+  // ---------------------------
+  check("phone")
+    .optional()
+    .isMobilePhone()
+    .withMessage("Invalid phone number"),
+
+  // ---------------------------
+  // Student fields
+  // ---------------------------
+  check("studentNumber")
+    .optional()
+    .isNumeric()
+    .withMessage("Student number must be numeric"),
+
+  check("year")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid year ID format"),
+
+  check("semester")
+    .optional()
+    .isMongoId()
+    .withMessage("Invalid semester ID format"),
+
+  
+  // ---------------------------
+  // Doctor fields
+  // ---------------------------
+  check("specialization")
+    .optional()
+    .isString()
+    .withMessage("Specialization must be a string"),
+
+  check("academicTitle")
+    .optional()
+    .isString()
+    .withMessage("Academic title must be a string"),
+
+  validatorMiddleware,
+];

@@ -1,0 +1,662 @@
+===== Inserted Subjects =====
+
+
+#1 ------------------------------
+ID: 6a713d350e44587f8b8c2933
+Name: Internal Medicine I
+Code: SUB1
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac9357625
+Description: Introduction to internal medicine principles.
+Lectures: []
+--------------------------------------------------
+
+#2 ------------------------------
+ID: 6a713d350e44587f8b8c2934
+Name: Internal Medicine II
+Code: SUB2
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac9357625
+Description: Advanced internal medicine concepts.
+Lectures: []
+--------------------------------------------------
+
+#3 ------------------------------
+ID: 6a713d350e44587f8b8c2935
+Name: Cardiovascular Medicine
+Code: SUB3
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac9357625
+Description: Study of heart diseases and treatments.
+Lectures: []
+--------------------------------------------------
+
+#4 ------------------------------
+ID: 6a713d350e44587f8b8c2936
+Name: Pulmonology
+Code: SUB4
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac9357625
+Description: Respiratory system disorders and management.
+Lectures: []
+--------------------------------------------------
+
+#5 ------------------------------
+ID: 6a713d350e44587f8b8c2937
+Name: Gastroenterology
+Code: SUB5
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac9357625
+Description: Digestive system diseases and treatments.
+Lectures: []
+--------------------------------------------------
+
+#6 ------------------------------
+ID: 6a713d350e44587f8b8c2938
+Name: Endocrinology
+Code: SUB6
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac9357625
+Description: Hormonal disorders and endocrine system.
+Lectures: []
+--------------------------------------------------
+
+#7 ------------------------------
+ID: 6a713d350e44587f8b8c2939
+Name: Pharmacology I
+Code: SUB7
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac9357626
+Description: Introduction to drug mechanisms.
+Lectures: []
+--------------------------------------------------
+
+#8 ------------------------------
+ID: 6a713d350e44587f8b8c293a
+Name: Pharmacology II
+Code: SUB8
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac9357626
+Description: Advanced drug interactions and therapies.
+Lectures: []
+--------------------------------------------------
+
+#9 ------------------------------
+ID: 6a713d350e44587f8b8c293b
+Name: Clinical Pharmacology
+Code: SUB9
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac9357626
+Description: Drug usage in clinical settings.
+Lectures: []
+--------------------------------------------------
+
+#10 ------------------------------
+ID: 6a713d350e44587f8b8c293c
+Name: Toxicology
+Code: SUB10
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac9357626
+Description: Study of poisons and harmful substances.
+Lectures: []
+--------------------------------------------------
+
+#11 ------------------------------
+ID: 6a713d350e44587f8b8c293d
+Name: Pharmaceutical Chemistry
+Code: SUB11
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac9357626
+Description: Chemical foundations of drugs.
+Lectures: []
+--------------------------------------------------
+
+#12 ------------------------------
+ID: 6a713d350e44587f8b8c293e
+Name: Drug Development
+Code: SUB12
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac9357626
+Description: Processes of creating new medications.
+Lectures: []
+--------------------------------------------------
+
+#13 ------------------------------
+ID: 6a713d350e44587f8b8c293f
+Name: Anatomy I
+Code: SUB13
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac9357627
+Description: Introduction to human anatomy.
+Lectures: []
+--------------------------------------------------
+
+#14 ------------------------------
+ID: 6a713d350e44587f8b8c2940
+Name: Anatomy II
+Code: SUB14
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac9357627
+Description: Advanced anatomical structures.
+Lectures: []
+--------------------------------------------------
+
+#15 ------------------------------
+ID: 6a713d350e44587f8b8c2941
+Name: Neuroanatomy
+Code: SUB15
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac9357627
+Description: Study of nervous system anatomy.
+Lectures: []
+--------------------------------------------------
+
+#16 ------------------------------
+ID: 6a713d350e44587f8b8c2942
+Name: Musculoskeletal Anatomy
+Code: SUB16
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac9357627
+Description: Bones, joints, and muscles.
+Lectures: []
+--------------------------------------------------
+
+#17 ------------------------------
+ID: 6a713d350e44587f8b8c2943
+Name: Head and Neck Anatomy
+Code: SUB17
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac9357627
+Description: Detailed study of head and neck.
+Lectures: []
+--------------------------------------------------
+
+#18 ------------------------------
+ID: 6a713d350e44587f8b8c2944
+Name: Thoracic Anatomy
+Code: SUB18
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac9357627
+Description: Chest cavity structures.
+Lectures: []
+--------------------------------------------------
+
+#19 ------------------------------
+ID: 6a713d350e44587f8b8c2945
+Name: Biochemistry I
+Code: SUB19
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac9357628
+Description: Basics of biochemistry.
+Lectures: []
+--------------------------------------------------
+
+#20 ------------------------------
+ID: 6a713d350e44587f8b8c2946
+Name: Biochemistry II
+Code: SUB20
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac9357628
+Description: Advanced biochemical pathways.
+Lectures: []
+--------------------------------------------------
+
+#21 ------------------------------
+ID: 6a713d350e44587f8b8c2947
+Name: Molecular Biology
+Code: SUB21
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac9357628
+Description: Study of DNA, RNA, and proteins.
+Lectures: []
+--------------------------------------------------
+
+#22 ------------------------------
+ID: 6a713d350e44587f8b8c2948
+Name: Cell Biology
+Code: SUB22
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac9357628
+Description: Cell structure and function.
+Lectures: []
+--------------------------------------------------
+
+#23 ------------------------------
+ID: 6a713d350e44587f8b8c2949
+Name: Metabolism
+Code: SUB23
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac9357628
+Description: Energy production and biochemical cycles.
+Lectures: []
+--------------------------------------------------
+
+#24 ------------------------------
+ID: 6a713d350e44587f8b8c294a
+Name: Genetics
+Code: SUB24
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac9357628
+Description: Study of heredity and variation.
+Lectures: []
+--------------------------------------------------
+
+#25 ------------------------------
+ID: 6a713d350e44587f8b8c294b
+Name: Pathology I
+Code: SUB25
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac9357629
+Description: Introduction to pathology.
+Lectures: []
+--------------------------------------------------
+
+#26 ------------------------------
+ID: 6a713d350e44587f8b8c294c
+Name: Pathology II
+Code: SUB26
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac9357629
+Description: Advanced pathological processes.
+Lectures: []
+--------------------------------------------------
+
+#27 ------------------------------
+ID: 6a713d350e44587f8b8c294d
+Name: Histopathology
+Code: SUB27
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac9357629
+Description: Microscopic study of diseased tissues.
+Lectures: []
+--------------------------------------------------
+
+#28 ------------------------------
+ID: 6a713d350e44587f8b8c294e
+Name: Clinical Pathology
+Code: SUB28
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac9357629
+Description: Laboratory diagnosis of diseases.
+Lectures: []
+--------------------------------------------------
+
+#29 ------------------------------
+ID: 6a713d350e44587f8b8c294f
+Name: Immunopathology
+Code: SUB29
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac9357629
+Description: Immune system disorders.
+Lectures: []
+--------------------------------------------------
+
+#30 ------------------------------
+ID: 6a713d350e44587f8b8c2950
+Name: Oncopathology
+Code: SUB30
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac9357629
+Description: Cancer pathology.
+Lectures: []
+--------------------------------------------------
+
+#31 ------------------------------
+ID: 6a713d350e44587f8b8c2951
+Name: Microbiology I
+Code: SUB31
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac935762a
+Description: Basics of microbiology.
+Lectures: []
+--------------------------------------------------
+
+#32 ------------------------------
+ID: 6a713d350e44587f8b8c2952
+Name: Microbiology II
+Code: SUB32
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac935762a
+Description: Advanced microbial studies.
+Lectures: []
+--------------------------------------------------
+
+#33 ------------------------------
+ID: 6a713d350e44587f8b8c2953
+Name: Virology
+Code: SUB33
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac935762a
+Description: Study of viruses and viral diseases.
+Lectures: []
+--------------------------------------------------
+
+#34 ------------------------------
+ID: 6a713d350e44587f8b8c2954
+Name: Bacteriology
+Code: SUB34
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac935762a
+Description: Study of bacteria and bacterial infections.
+Lectures: []
+--------------------------------------------------
+
+#35 ------------------------------
+ID: 6a713d350e44587f8b8c2955
+Name: Parasitology
+Code: SUB35
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac935762a
+Description: Study of parasites and parasitic diseases.
+Lectures: []
+--------------------------------------------------
+
+#36 ------------------------------
+ID: 6a713d350e44587f8b8c2956
+Name: Immunology
+Code: SUB36
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac935762a
+Description: Immune system structure and function.
+Lectures: []
+--------------------------------------------------
+
+#37 ------------------------------
+ID: 6a713d350e44587f8b8c2957
+Name: Clinical Microbiology
+Code: SUB37
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac935762a
+Description: Laboratory diagnosis of infectious diseases.
+Lectures: []
+--------------------------------------------------
+
+#38 ------------------------------
+ID: 6a713d350e44587f8b8c2958
+Name: Advanced Microbiology
+Code: SUB38
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac935762a
+Description: Advanced topics in microbial science.
+Lectures: []
+--------------------------------------------------
+
+#39 ------------------------------
+ID: 6a713d350e44587f8b8c2959
+Name: Surgery I
+Code: SUB39
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac935762b
+Description: Introduction to surgical principles.
+Lectures: []
+--------------------------------------------------
+
+#40 ------------------------------
+ID: 6a713d350e44587f8b8c295a
+Name: Surgery II
+Code: SUB40
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac935762b
+Description: Advanced surgical procedures.
+Lectures: []
+--------------------------------------------------
+
+#41 ------------------------------
+ID: 6a713d350e44587f8b8c295b
+Name: Orthopedic Surgery
+Code: SUB41
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac935762b
+Description: Musculoskeletal surgical techniques.
+Lectures: []
+--------------------------------------------------
+
+#42 ------------------------------
+ID: 6a713d350e44587f8b8c295c
+Name: Neurosurgery
+Code: SUB42
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac935762b
+Description: Brain and spinal cord surgery.
+Lectures: []
+--------------------------------------------------
+
+#43 ------------------------------
+ID: 6a713d350e44587f8b8c295d
+Name: Cardiothoracic Surgery
+Code: SUB43
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac935762b
+Description: Heart and chest surgical procedures.
+Lectures: []
+--------------------------------------------------
+
+#44 ------------------------------
+ID: 6a713d350e44587f8b8c295e
+Name: General Surgery
+Code: SUB44
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac935762b
+Description: General surgical operations.
+Lectures: []
+--------------------------------------------------
+
+#45 ------------------------------
+ID: 6a713d350e44587f8b8c295f
+Name: Pediatrics I
+Code: SUB45
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac935762c
+Description: Introduction to pediatric medicine.
+Lectures: []
+--------------------------------------------------
+
+#46 ------------------------------
+ID: 6a713d350e44587f8b8c2960
+Name: Pediatrics II
+Code: SUB46
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac935762c
+Description: Advanced pediatric care.
+Lectures: []
+--------------------------------------------------
+
+#47 ------------------------------
+ID: 6a713d350e44587f8b8c2961
+Name: Neonatology
+Code: SUB47
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac935762c
+Description: Care of newborn infants.
+Lectures: []
+--------------------------------------------------
+
+#48 ------------------------------
+ID: 6a713d350e44587f8b8c2962
+Name: Pediatric Neurology
+Code: SUB48
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac935762c
+Description: Neurological disorders in children.
+Lectures: []
+--------------------------------------------------
+
+#49 ------------------------------
+ID: 6a713d350e44587f8b8c2963
+Name: Pediatric Cardiology
+Code: SUB49
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac935762c
+Description: Heart diseases in children.
+Lectures: []
+--------------------------------------------------
+
+#50 ------------------------------
+ID: 6a713d350e44587f8b8c2964
+Name: Pediatric Endocrinology
+Code: SUB50
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac935762c
+Description: Hormonal disorders in children.
+Lectures: []
+--------------------------------------------------
+
+#51 ------------------------------
+ID: 6a713d350e44587f8b8c2965
+Name: Neurology I
+Code: SUB51
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29df
+Doctor: 6a7139a51defb04ac935762d
+Description: Basics of neurology.
+Lectures: []
+--------------------------------------------------
+
+#52 ------------------------------
+ID: 6a713d350e44587f8b8c2966
+Name: Neurology II
+Code: SUB52
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e0
+Doctor: 6a7139a51defb04ac935762d
+Description: Advanced neurological disorders.
+Lectures: []
+--------------------------------------------------
+
+#53 ------------------------------
+ID: 6a713d350e44587f8b8c2967
+Name: Clinical Neurology
+Code: SUB53
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e1
+Doctor: 6a7139a51defb04ac935762d
+Description: Diagnosis and treatment of neurological diseases.
+Lectures: []
+--------------------------------------------------
+
+#54 ------------------------------
+ID: 6a713d350e44587f8b8c2968
+Name: Neurophysiology
+Code: SUB54
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e2
+Doctor: 6a7139a51defb04ac935762d
+Description: Function of the nervous system.
+Lectures: []
+--------------------------------------------------
+
+#55 ------------------------------
+ID: 6a713d350e44587f8b8c2969
+Name: Neuropharmacology
+Code: SUB55
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e3
+Doctor: 6a7139a51defb04ac935762d
+Description: Drugs affecting the nervous system.
+Lectures: []
+--------------------------------------------------
+
+#56 ------------------------------
+ID: 6a713d350e44587f8b8c296a
+Name: Neuroimaging
+Code: SUB56
+Year: 6a7124f163fa51066c429b76
+Semester: 6a7127dc9570dbe92e4a29e4
+Doctor: 6a7139a51defb04ac935762d
+Description: Brain imaging techniques.
+Lectures: []
+--------------------------------------------------
+
+#57 ------------------------------
+ID: 6a713d350e44587f8b8c296b
+Name: Dermatology I
+Code: SUB57
+Year: 6a7124f163fa51066c429b77
+Semester: 6a7127dc9570dbe92e4a29e5
+Doctor: 6a7139a51defb04ac935762e
+Description: Basics of dermatology.
+Lectures: []
+--------------------------------------------------
+
+#58 ------------------------------
+ID: 6a713d350e44587f8b8c296c
+Name: Dermatology II
+Code: SUB58
+Year: 6a7124f163fa51066c429b78
+Semester: 6a7127dc9570dbe92e4a29e6
+Doctor: 6a7139a51defb04ac935762e
+Description: Advanced skin diseases.
+Lectures: []
+--------------------------------------------------
+
+#59 ------------------------------
+ID: 6a713d350e44587f8b8c296d
+Name: Cosmetic Dermatology
+Code: SUB59
+Year: 6a7124f163fa51066c429b79
+Semester: 6a7127dc9570dbe92e4a29e7
+Doctor: 6a7139a51defb04ac935762e
+Description: Cosmetic skin treatments.
+Lectures: []
+--------------------------------------------------
+
+#60 ------------------------------
+ID: 6a713d350e44587f8b8c296e
+Name: Dermatopathology
+Code: SUB60
+Year: 6a7124f163fa51066c429b7a
+Semester: 6a7127dc9570dbe92e4a29e8
+Doctor: 6a7139a51defb04ac935762e
+Description: Microscopic study of skin diseases.
+Lectures: []
+--------------------------------------------------

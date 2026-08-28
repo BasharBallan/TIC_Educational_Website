@@ -335,43 +335,23 @@ exports.deleteSubject = asyncHandler(async (req, res, next) => {
 // @access  Private/Student
 // ======================================================================
 exports.getMySubjects = asyncHandler(async (req, res, next) => {
+  console.log("🔥 ENTERED getMySubjects");
 
-  // Log: attempt
-  logger.info("Fetching subjects for student", {
-    meta: {
-      userId: req.user._id,
-      studentYear: req.user.studentData?.year,
-      ip: req.ip,
-      device: req.headers["user-agent"],
-      correlationId: req.correlationId
-    }
-  });
+  console.log("req.user =", req.user);
+  console.log("req.user.studentData =", req.user.studentData);
+  console.log("req.user.studentData.year =", req.user.studentData?.year);
 
-  const studentYearId = req.user.studentData?.year;
+  const user = await User.findById(req.user._id).populate("studentData.year");
+  console.log("🔥 user from DB =", user);
+  console.log("🔥 user.studentData =", user.studentData);
+  console.log("🔥 user.studentData.year =", user.studentData?.year);
 
-  if (!studentYearId) {
-    logger.warn("Fetching subjects failed: student year not found", {
-      meta: {
-        userId: req.user._id,
-        correlationId: req.correlationId
-      }
-    });
+  const studentYearId = user.studentData?.year?._id;
+  console.log("🔥 studentYearId =", studentYearId);
 
-    return next(new ApiError("Student year not found", 400));
-  }
-
-  const subjects = await Subject.find({ yearId: studentYearId })
-    .select("name yearId");
-
-  // Log: success
-  logger.info("Subjects fetched successfully", {
-    meta: {
-      userId: req.user._id,
-      studentYear: studentYearId,
-      subjectsCount: subjects.length,
-      correlationId: req.correlationId
-    }
-  });
+  const subjects = await Subject.find({ yearId: studentYearId });
+  console.log("🔥 subjects.length =", subjects.length);
+  console.log("🔥 subjects =", subjects);
 
   res.status(200).json({
     status: "success",

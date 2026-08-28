@@ -1,15 +1,24 @@
 import { useContext } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { Navigate } from "react-router-dom";
 
 export default function ProtectedRoute({ children }) {
-  const { token } = useContext(AuthContext);
+  const { user, loading } = useContext(AuthContext);
+  const location = useLocation();
 
-  // If user is not authenticated, redirect to login page
-  if (!token) {
-    return <Navigate to="/login" replace />;
+  if (loading) {
+    return <p style={{ padding: "30px" }}>Loading...</p>;
   }
 
-  // If authenticated, render the protected component
+  if (!user || !user._id) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location }}
+      />
+    );
+  }
+
   return children;
 }

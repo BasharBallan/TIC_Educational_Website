@@ -86,9 +86,22 @@ exports.deleteUser = factory.deleteOne(User);
 // @access  Private/Protect
 // ======================================================================
 exports.getLoggedUserData = asyncHandler(async (req, res, next) => {
-  req.params.id = req.user._id;
-  next();
+  const user = await User.findById(req.user._id)
+    .populate("studentData.year", "name")
+    .populate("studentData.semester", "name")
+    .populate("studentData.subjects", "name")
+    .populate("doctorData.subjects", "name");
+
+  if (!user) {
+    return res.status(404).json({ status: "fail", message: "User not found" });
+  }
+
+  res.status(200).json({
+    status: "success",
+    data: user,
+  });
 });
+
 
 
 // ======================================================================
@@ -148,7 +161,7 @@ exports.updateLoggedUserData = asyncHandler(async (req, res, next) => {
       email: req.body.email,
       phone: req.body.phone,
       profileImg: req.body.profileImg
-      
+
     },
     { new: true }
   );
@@ -296,5 +309,65 @@ exports.deleteDoctor = asyncHandler(async (req, res, next) => {
 
   res.status(200).json({
     status: "success",
+  });
+});
+
+// ======================================================================
+// COMPLETE PROFILE (STUDENT / DOCTOR)
+// ======================================================================
+// @desc    Complete logged user profile based on role
+// @route   PUT /api/v1/users/complete-profile
+// @access  Private/Protect
+// ======================================================================
+exports.completeProfile = asyncHandler(async (req, res, next) => {
+  const userId = req.user._id;
+
+  // Base fields for all users
+  const updateData = {
+    phone: req.body.phone,
+  };
+
+  // Handle profile image (multer)
+  if (req.file) {
+    updateData.profileImg = req.file.filename;
+  }
+
+  // ======================================================================
+  // STUDENT PROFILE COMPLETION
+  // ======================================================================
+  if (req.user.role === "student") {
+    updateData.studentData = {
+      studentNumber: req.body.studentNumber,
+      year: req.body.year,
+      semester: req.body.semester,
+    };
+  }
+
+  // ======================================================================
+  // DOCTOR PROFILE COMPLETION
+  // ======================================================================
+  if (req.user.role === "doctor") {
+    updateData.doctorData = {
+      specialization: req.body.specialization,
+      academicTitle: req.body.academicTitle,
+      subjects: req.body.subjects, // array of subject IDs
+    };
+  }
+
+  // ======================================================================
+  // UPDATE USER
+  // ======================================================================
+  const updatedUser = await User.findByIdAndUpdate(userId, updateData, {
+    new: true,
+  })
+    .populate("studentData.year")
+    .populate("studentData.semester")
+    .populate("studentData.subjects")
+    .populate("doctorData.subjects");
+
+  res.status(200).json({
+    status: "success",
+    message: "Profile completed successfully",
+    data: updatedUser,
   });
 });

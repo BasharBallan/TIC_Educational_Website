@@ -171,7 +171,7 @@ describe("User & Doctor API (Admin + Logged Student)", () => {
 
   it("✓ should update logged user data", async () => {
     const res = await request(app)
-      .put("/api/v1/users/updateMe")
+      .post("/api/v1/users/updateMe")
       .set("x-test-role", "student")
       .send({ name: "Updated Student" });
 

@@ -27,6 +27,13 @@ const {
   googleUnlinkService,
   googleInitService,
   setPasswordService,
+  verifyEmail,
+  completeProfile,
+  rejectUser,
+  approveUser,
+  resendVerificationCode,
+  uploadSignupImages,
+  resizeSignupImages,
 } = require("../services/authService");
 
 /**
@@ -56,7 +63,7 @@ const {
  *               - name
  *               - email
  *               - password
- *               - passwordConfirm
+ *               - comfirmPassword
  *             properties:
  *               name:
  *                 type: string
@@ -67,7 +74,7 @@ const {
  *               password:
  *                 type: string
  *                 example: "Pass123@456"
- *               passwordConfirm:
+ *               confirmPassword:
  *                 type: string
  *                 example: "Pass123@456"
  *     responses:
@@ -77,6 +84,149 @@ const {
  *         description: Invalid input data
  */
 router.post("/signup", signupValidator, signup);
+/* =====================================================================
+   VERIFY EMAIL (SIGNUP STEP 2)
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/verify-email:
+ *   post:
+ *     summary: Verify Email Code
+ *     tags: [Auth]
+ *     description: Verify the 6-digit code sent to the user's email during signup.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - code
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "bashar@example.com"
+ *               code:
+ *                 type: string
+ *                 example: "123456"
+ *     responses:
+ *       200:
+ *         description: Email verified successfully
+ *       400:
+ *         description: Invalid or expired verification code
+ */
+router.post("/verify-email", verifyEmail);
+/* =====================================================================
+   COMPLETE PROFILE (SIGNUP STEP 3)
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/complete-profile:
+ *   post:
+ *     summary: Complete Student Profile
+ *     tags: [Auth]
+ *     description: Complete the student's profile after email verification. Includes phone, year, semester, and required images.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - phone
+ *               - year
+ *               - profileImg
+ *               - universityCardImg
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 example: "student@example.com"
+ *               phone:
+ *                 type: string
+ *                 example: "0987654321"
+ *               year:
+ *                 type: string
+ *                 example: "66f7b9d2c1a2f8a9b3c12345"
+ *               semester:
+ *                 type: string
+ *                 example: "66f7b9d2c1a2f8a9b3c67890"
+ *               profileImg:
+ *                 type: string
+ *                 example: "https://example.com/profile.jpg"
+ *               universityCardImg:
+ *                 type: string
+ *                 example: "https://example.com/card.jpg"
+ *     responses:
+ *       200:
+ *         description: Profile completed successfully
+ *       400:
+ *         description: Invalid input data
+ */
+ router.post(
+   "/complete-profile",
+   uploadSignupImages,
+   resizeSignupImages,
+   completeProfile
+ );
+
+/* =====================================================================
+   ADMIN APPROVAL
+   ===================================================================== */
+/**
+ * @swagger
+ * /api/v1/auth/admin/approve-user/{id}:
+ *   post:
+ *     summary: Approve a student account
+ *     tags: [Auth]
+ *     description: Approve a student's profile after verification and profile completion.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     responses:
+ *       200:
+ *         description: User approved successfully
+ *       404:
+ *         description: User not found
+ */
+router.post("/admin/approve-user/:id", protect, approveUser);
+
+/**
+ * @swagger
+ * /api/v1/auth/admin/reject-user/{id}:
+ *   post:
+ *     summary: Reject a student account
+ *     tags: [Auth]
+ *     description: Reject a student's profile with an optional reason.
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: User ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *                 example: "Invalid university card"
+ *     responses:
+ *       200:
+ *         description: User rejected successfully
+ *       404:
+ *         description: User not found
+ */
+router.post("/admin/reject-user/:id", protect, rejectUser);
 
 /* =====================================================================
    LOGIN (STUDENT / DOCTOR) — Updated to match new authService logic
@@ -457,5 +607,6 @@ router.delete("/unlink/google", protect, googleUnlinkService);
  *         description: Unauthorized
  */
 router.post("/set-password", protect, setPasswordService);
+router.post("/resend-code", resendVerificationCode);
 
 module.exports = router;

@@ -1,4 +1,4 @@
-const amqp = require("amqplib");
+/*const amqp = require("amqplib");
 
 let channel;
 
@@ -13,3 +13,4 @@ async function connectRabbitMQ() {
 }
 
 module.exports = { connectRabbitMQ };
+*/

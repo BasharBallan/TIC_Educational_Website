@@ -37,22 +37,15 @@ const httpServer = http.createServer(app);
 // Initialize Socket.IO
 // ------------------------------------------------------
 const io = initSocketServer(httpServer);
-global.io = io;
-
-// ------------------------------------------------------
-// Inject io into every request (Fix req.io.emit)
-// ------------------------------------------------------
-app.use((req, res, next) => {
-  req.io = io; // attach io instance globally
-  next();
-});
+global.io = io; // يتم استخدامه بداخل app.js عبر global.io
 
 // ------------------------------------------------------
 // Start server
 // ------------------------------------------------------
 const PORT = process.env.PORT || 8000;
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 Server + Socket.IO running on port ${PORT}`);
+
+httpServer.listen(PORT, '0.0.0.0', () => {
+  logger.info(`🚀 Server + Socket.IO running on port ${PORT} (0.0.0.0)`);
 });
 
 // ------------------------------------------------------

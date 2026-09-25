@@ -12,6 +12,7 @@ const langMiddleware = require('./middlewares/langMiddleware');
 const mountRoutes = require('./routes');
 const ApiError = require('./utils/apiError');
 const globalError = require('./middlewares/errorMiddleware');
+const { getHealthStatus } = require("./services/healthService");
 
 // Winston Logging Middlewares
 const correlationId = require("./middlewares/correlationId");
@@ -21,22 +22,20 @@ const errorLogger = require("./middlewares/errorLogger");
 const app = express();
 
 // ------------------------------------------------------
-// Inject io BEFORE any routes (server.js will attach io)
+// Inject io BEFORE any routes
 // ------------------------------------------------------
 app.use((req, res, next) => {
-  req.io = global.io;   // 🔥 io injected globally
+  req.io = global.io;
   next();
 });
 
-// ------------------------------------------------------
-// CORS
-// ------------------------------------------------------
+
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: true,
     credentials: true,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
   })
 );
 
@@ -55,6 +54,7 @@ app.use(
 // Body parser
 app.use(express.json({ limit: '20kb' }));
 app.use(express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static("uploads"));
 
 // Cookie parser
 app.use(cookieParser());
@@ -87,19 +87,25 @@ app.use(
 
 // Custom language middleware
 app.use(langMiddleware);
-app.use("/uploads", express.static("uploads"));
+
+// ------------------------------------------------------
+// 🔥 Root Route for Cloud Provider Health Checks (Back4App)
+// ------------------------------------------------------
+app.get('/', (req, res) => {
+  const healthData = getHealthStatus();
+  res.status(200).json({
+    status: 'success',
+    message: 'TIC Educational Backend API is live & running!',
+    health: healthData,
+  });
+});
 
 // Swagger
 const { swaggerUi, swaggerSpec } = require("./swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
-app.use((req, res, next) => {
-  req.io = global.io;
-  next();
-});
-
 // ------------------------------------------------------
-// Mount routes AFTER injecting req.io
+// Mount routes
 // ------------------------------------------------------
 mountRoutes(app);
 

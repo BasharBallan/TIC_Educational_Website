@@ -10,5 +10,6 @@ uploads/``
 logs/``
 
 TIC_Educational_Website-output.md
-
 TIC_Educational_Website-output.txt
+*.txt
+*.md

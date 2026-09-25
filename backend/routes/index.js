@@ -8,7 +8,7 @@ const lectureRoute = require("./lectureRoute");
 const savedLecturesRoute = require("./savedLecturesRoute");
 const healthRoute = require("./healthRoute");
 const notificationRoute = require("./notificationRoute");
-
+const chatRoutes = require("./chatRoutes");
 
 const mountRoutes = (app) => {
   app.use("/api/v1/auth", authRoute);
@@ -21,7 +21,7 @@ app.use("/api/v1/notifications", notificationRoute);
   app.use("/api/v1/lectures", lectureRoute);
 app.use("/api/v1/saved-lectures", savedLecturesRoute);
 app.use("/api/v1/health", healthRoute);
-
+app.use("/api/v1/chat", chatRoutes);
 };
 
 module.exports = mountRoutes;

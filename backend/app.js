@@ -100,6 +100,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// Browsers request this automatically when opening the API URL.
+app.get('/favicon.ico', (req, res) => {
+  res.status(204).end();
+});
+
 // Swagger
 const { swaggerUi, swaggerSpec } = require("./swagger");
 app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(swaggerSpec));

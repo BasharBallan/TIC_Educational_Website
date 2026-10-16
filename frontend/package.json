@@ -17,6 +17,9 @@
     "react-router-dom": "^7.18.1",
     "socket.io-client": "^4.8.3"
   },
+  "engines": {
+    "node": "24.x"
+  },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/react": "^19.2.17",

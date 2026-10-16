@@ -1,20 +1,20 @@
 // server.js
 
-const dotenv = require("dotenv");
-const mongoose = require("mongoose");
-const http = require("http");
-const app = require("./app");
-const logger = require("./utils/logger");
-const { initSocketServer } = require("./socket/socket");
+const dotenv = require('dotenv');
 
-// ------------------------------------------------------
-// Load environment variables
-// ------------------------------------------------------
-if (process.env.NODE_ENV === "test") {
-  dotenv.config({ path: "config.env.test" });
-  logger.transports.forEach((t) => (t.silent = true));
-} else {
-  dotenv.config({ path: "config.env" });
+// Load environment variables before importing modules that read configuration.
+dotenv.config({ path: process.env.NODE_ENV === 'test' ? 'config.env.test' : 'config.env' });
+
+const mongoose = require('mongoose');
+const http = require('http');
+const app = require('./app');
+const logger = require('./utils/logger');
+const { initSocketServer } = require('./socket/socket');
+
+if (process.env.NODE_ENV === 'test') {
+  logger.transports.forEach((transport) => {
+    transport.silent = true;
+  });
 }
 
 // ------------------------------------------------------

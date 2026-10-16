@@ -20,6 +20,14 @@ const errorLogger = require("./middlewares/errorLogger");
 
 const app = express();
 
+app.get('/', (req, res) => {
+  res.status(200).json({
+    status: 'ok',
+    message: 'TIC Educational Platform API is healthy.',
+    timestamp: new Date().toISOString(),
+  });
+});
+
 // ------------------------------------------------------
 // Inject io BEFORE any routes (server.js will attach io)
 // ------------------------------------------------------
